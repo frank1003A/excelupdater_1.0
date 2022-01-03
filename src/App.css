@@ -9,6 +9,8 @@
 
 .scontainer {
   padding: 1rem;
+  display: flex;
+  justify-content: center;
 }
 
 @media (prefers-reduced-motion: no-preference) {
