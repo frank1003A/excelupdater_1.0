@@ -7,20 +7,78 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import Paper from "@mui/material/Paper";
 import { Button } from "@mui/material";
 import { IconButton } from "@mui/material";
 import Export from "@mui/icons-material/ImportExportRounded";
 import Input from "@mui/material/Input";
 import { TextField } from "@mui/material";
 import { keyboard } from "@testing-library/user-event/dist/keyboard";
-import _ from "lodash";
-import { BottomNavigation } from "@mui/material";
+import SpeedDial from './SpeedDial'
+import PaperC from './SpeedDial'
+import { getOverlappingDaysInIntervals } from "date-fns";
+import TabPanel from './TabPanel'
+import imgSh from '../assets/ss2.svg'
+import Tabpanel from './TabPanel'
+import { Paper } from "@mui/material";
+import Snackbar from '@mui/material/Snackbar';
+import MuiAlert from '@mui/material/Alert';
+import LinearWithValueLabel from "./Linearlabel";
+import Backdrop from './Backdrop'
+
 
 function Container() {
   const [exceldata, setexceldata] = useState([]);
   const [sheetname, setsheetName] = useState("");
   const [startIndex, setstartIndex] = useState("");
+  const [rangeS, setrangeS] = useState('')
+  const [rangeE, setrangeE] = useState('')
+  const [sheetData, setsheetData] =  useState([])
+  const [matchedData, setmatchedData] = useState([])
+  const [showT, setshowT] = useState(false);
+
+   /**Backdrop */
+   const [open, setOpen] = useState(false);
+   const handleClose = () => {
+     setOpen(false);
+   };
+   const handleToggle = () => {
+     setOpen(!open);
+   };
+   /**Backdrop end*/
+
+
+  /**Snackbar */
+  const Alert = React.forwardRef(function Alert(props, ref) {
+    return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
+  });
+
+  const [opensuccess, setOpensuccess] = useState(false);
+  const [openwarn, setOpenwarn] = useState(false)
+
+  const handlesucClick = () => {
+    setOpensuccess(true);
+  };
+
+  const handlewarClick = () => {
+    setOpenwarn(true);
+  };
+
+  const handlesucClose = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+
+    setOpensuccess(false);
+  };
+
+  const handlewarClose = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+
+    setOpenwarn(false);
+  };
+
 
   //read xlsx file and return as html table
   const readExcelFile = (file) => {
@@ -30,7 +88,7 @@ function Container() {
 
       fileReader.onload = (e) => {
         const bufferArray = e.target.result;
-        const wb = XLSX.read(bufferArray, { type: "buffer" });
+        const wb = XLSX.read(bufferArray, { type: "buffer", cellDates: true, dateNF: 'yyyy-mm-dd'});
 
         const wsname = wb.SheetNames[0];
         const ws = wb.Sheets[wsname];
@@ -43,7 +101,9 @@ function Container() {
     });
 
     promise.then((d) => {
-      setexceldata(d);
+      if (d.code === ('' || undefined || null)){ 
+        //do nothing
+      }else { return setexceldata(d);}
       console.log(d);
     });
   };
@@ -70,12 +130,6 @@ function Container() {
 
   //modify xlsx file and update existing workbok
   const updateWorkbookTwo = (fileName, fileExtension, file) => {
-    /*
-      const table = document.getElementById('tablegen')
-      const uptdWorksheet = XLSX.utils.table_to_sheet(table)
-      return XLSX.utils.book_append_sheet(fileName + "." + fileExtension,  uptdWorksheet, 'sheet2')
-      */
-
     const promise = new Promise((resolve, reject) => {
       checkSheetName(); // check if sheet name is empty
 
@@ -94,11 +148,12 @@ function Container() {
           worksheet[sheetName] = XLSX.utils.sheet_to_json(wb.Sheets);
 
         for (let i = 0; i < exceldata.length; i++) {
+          const bala = 'N/A'
           const data = {
-            Dated: exceldata[i].Date,
-            Descriptiond: exceldata[i].Description,
-            Nod: exceldata[i].No,
             Amountd: exceldata[i].Amount,
+            Dated: exceldata[i]['Trans Date'],
+            Balance: exceldata[i][bala],
+            Descriptiond: exceldata[i].Description,
           };
           worksheet[sheetname].push(data);
         }
@@ -125,30 +180,15 @@ function Container() {
       alert("file updated");
     });
   };
-  /*
-    //match utility functin
-    const match = (a) => {
-      for(let i = 0; i < a.length; i++){
-          for (let j = 0; j < exceldata.length; j++){
-              if (a[i].No === exceldata[j].No) {
-                imageData.push({
-                  'Dated' : exceldata[j].Date, 
-                  'Descriptiond': exceldata[j].Description,
-                  'Nod': exceldata[j].No, 
-                  'Amountd': exceldata[j].Amount})
-                  setmatchedData({data: imageData},console.log(imageData))
-          }
-          }
-      }
-    }  
-    */
 
   //match data from html table to  workboook
   const matchData = (fileName, fileExtension, file) => {
     const promise = new Promise((resolve, reject) => {
-      checkSheetName(); // check if sheet name is empty
+      checkSheetName();     /** checks if sheet name is empty */
 
-      checkStartPosition(); // check origin cell input
+      checkStartPosition(); //check origin cell input  
+    
+      checkRange() //Stops user from choosing a range of Ax as start position
 
       const fileReader = new FileReader();
       fileReader.readAsArrayBuffer(file);
@@ -162,71 +202,71 @@ function Container() {
         for (const sheetName of wb.SheetNames)
           worksheet[sheetName] = XLSX.utils.sheet_to_json(wb.Sheets);
 
-        //worksheet[sheetname]['!ref'] = "A19:D25"
-
-        //range utility functions
-        let A = "A";
-        let subR = startIndex.slice(1) - 1;
-        let rangeStart = A + subR;
-        wb.Sheets[sheetname]["!ref"] = `${rangeStart}:D15`;
-        console.log('startIndex', rangeStart)
+       //wb.Sheets[sheetname]["!ref"] = "A2:P40"; 
+       // wb.Sheets[sheetname]["!ref"] = getRange()
+       //sheet['!ref'] = "M3:P50"
 
         const sheet = XLSX.utils.sheet_to_json(wb.Sheets[sheetname], {
-          dateNF: "yyyy-mm-dd",
+          dateNF: "yyyy-mm-dd", range: `${rangeS}:${rangeE}`
         });
-        //sheet['!ref'] = "A10:D15"
 
         console.log("match from", sheet);
 
         const matchData = sheet.findIndex((wsData) => {
           for (let i = 0; i < exceldata.length; i++) {
-            if (exceldata[i].No === wsData.No) {
-              worksheet[sheetname].push({
-                Dated: exceldata[i].Date,
-                Descriptiond: exceldata[i].Description,
-                Nod: exceldata[i].No,
-                Amountd: exceldata[i].Amount,
-              });
-            } else {
-              console.log("Not matched");
+            if (exceldata[i].code === wsData['CODE']) {
+              const dta = { 
+                'TOTAL PAID': exceldata[i].Amount,
+                'DATE': exceldata[i]['Trans Date'],
+                'BALANCE': exceldata[i].Amount,
+                'REMARK': exceldata[i].Description,
+                'CODE':exceldata[i].code
+              }
+              worksheet[sheetname].push(dta);
+            }
+            else {
+              //do nothing
             }
           }
         });
+        
 
         while (worksheet[sheetname].length !== sheet.length) {
           worksheet[sheetname].push({
-            Dated: "",
-            Descriptiond: "",
-            Nod: "",
-            Amountd: "",
+            'TOTAL PAID': '',
+            'DATE': '',
+            'BALANCE':'',
+            'REMARK': '',
+            'CODE':''
           });
         }
+
         //map utility function
+
         const originalLength = worksheet[sheetname].length;
 
         const provide = (arr, field, index) => {
-          let result = arr.filter((a) => a["Nod"] == sheet[index][field]);
-          if (result.length == 0) {
-            result = arr.filter((a) => a["Nod"] == "");
+          let result = arr.filter((a) => a["CODE"] === sheet[index][field]);
+          if (result.length === 0) {
+            result = arr.filter((a) => a["CODE"] === "");
           }
           return result[0];
         };
+
 
         const originalArr = worksheet[sheetname].slice(0, originalLength);
 
         for (let i = 0; i < sheet.length; i++) {
           worksheet[sheetname].length = originalLength * 2;
-          const item = provide(originalArr, "No", i);
+          const item = provide(originalArr, "CODE", i);
           worksheet[sheetname][i] = item;
         }
 
         worksheet[sheetname].length = originalLength;
         //map utility function end
-
-        console.log("matched", matchData);
-
-        console.log("sheet", worksheet[sheetname]);
-
+      
+        console.log("sheetmatch", worksheet[sheetname]);
+        
         const updatedWs = XLSX.utils.sheet_add_json(
           wb.Sheets[sheetname],
           worksheet[sheetname],
@@ -241,58 +281,85 @@ function Container() {
       };
       fileReader.onerror = (error) => {
         reject(error);
+        handlewarClick()
       };
     });
     promise.then((d) => {
-      alert("Data matched and updated");
-      //window.location.reload()
+      handlesucClick();
     });
   };
 
-  const UpdateLog = ( ) => {
-    //log timestamp of file update 
+
+  /*
+  const getRange = (wbsheet) => {
+    const range = wbsheet.filter(range => range === "")
+    if (range){
+      //do nothing
+    }else { return(
+      wbsheet
+    )}
   }
+  */
 
-  //order  maper
-  const mapOrder = (array, order, key) => {
-    array.sort((a, b) => {
-      const A = a[key];
-      const B = b[key];
-      return order.indexOf(A) > order.indexOf(B) ? 1 : -1;
-    });
-    return array;
+
+  /*
+  const UpdateLog = () => {
+    //log timestamp of file update
   };
+  const getRange = () => {
+    // range start
+    let A = "A";
+    let subR = startIndex.slice(1) - 1;
+    let rangeStart = A + subR;
 
-  //mactch index
-  const matchIndex = (arr, initIndex, finIndex) => {
-    arr.splice(finIndex, 0, arr.splice(initIndex));
-    console.log(arr);
-    return arr;
+    //range end
+    let prefix = startIndex.slice(0, 1);
+    let num = startIndex.slice(1);
+
+    const Alpha = Array.from(Array(26)).map((e, i) => i + 65);
+    const alphabet = Alpha.map((x) => String.fromCharCode(x));
+
+    for (const key in alphabet)
+      prefix.toUpperCase() === alphabet[key] ? prefix = alphabet[key - 1] : console.log("Invalid value");
+
+    let calc = Number(num) + (10 - 1);
+
+    let rangeEnd = prefix + calc.toString();
+
+    //setrangeS(rangeStart)
+    //setrangeE(rangeEnd)
+
+    //final range 
+    let Range = `${rangeStart}:${rangeEnd}`
+    return Range
   };
+  */
+  
 
-  //
-  const sortArray = (a, b, defaultArr, sortingArr) => {
-    defaultArr.sort((a, b) => sortingArr.indexOf(a) - sortingArr.indexOf(b));
-  };
 
-  //check start position to end position based on date/week
+  //check start population position
   const checkStartPosition = () => {
     if (!startIndex || startIndex === null || startIndex === undefined)
       return alert("invalid start position");
   };
 
+  //check valid range for match and update: this only takes effect when matching updates
+  const checkRange = () => {
+    const r = startIndex.slice(0, 1); // A or a
+    if (r === ("a" || "A"))
+      return alert("invalid range\n select a range from Bx-Zx");
+  }
+
   //check sheet name
   const checkSheetName = () => {
     if (!sheetname || sheetname === undefined) {
-      return alert(
-        "invalid sheet name\n please check that the sheet name exist in excel workbook"
-      );
-    }
+      return alert('Invalid Sheet Name\nPlease confirm that sheet name exist')
   };
+  }
 
   //create directory for file backup
   const createFileDir = () => {
-    let dirName = "Protek_Workbooks";
+    let dirName = "Mapsheet_Workbooks";
     /*
       fs.mkdir(dirName, (err) => {
         err ? alert(err) : alert('File Directory' + `${dirName}` + 'created')
@@ -310,25 +377,58 @@ function Container() {
     );
   };
 
-  /*
-    //filter table data 
-    const filterTableData = exceldata.filter((data) => {
-        return data.Amount.includes(search) || data.Date.includes(search) || data.Description.includes(search)
-    })
-    */
+  const showtable = exceldata.map((row) => {
+    return (
+      <TableContainer component={Paper}>
+        <Table sx={{ minWidth: 650 }} aria-label="simple table" id="tablegen">
+          <TableHead sx={{ background: "#eee" }}>
+            <TableRow sx={{ color: "white" }}>
+              <TableCell>Id</TableCell>
+              <TableCell align="right">Trans Reference</TableCell>
+              <TableCell align="right">Trans Date</TableCell>
+              <TableCell align="right">code</TableCell>
+              <TableCell align="right">Amount</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableRow
+        key={row.__rowNum__}
+        sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+      >
+        <TableCell component="th" scope="row">
+          {row.__rowNum__}
+        </TableCell>
+        <TableCell align="right">{row['Trans Reference']}</TableCell>
+                <TableCell align="right">{row['Trans Date'].toString()}</TableCell>
+                <TableCell align="right">{row['code']}</TableCell>
+                <TableCell align="right">{row.Amount}</TableCell>
 
-  console.log(sheetname);
-  console.log(startIndex);
-  console.log("pushed:", exceldata);
+      </TableRow>
+        </Table>
+        </TableContainer>
+    )})
 
-  return (
-    <div>
-      <div className="scontainer">
-        <label htmlFor="fileToUpdateFrom">Update from: </label>
-        <Input
+    const showIcon = <>
+    <div className="UIco">
+    <img src={imgSh} alt="icon" style={{ height: '300px', padding: '6rem', }} />
+    <br />
+    <Button variant="contained"  style={{background:'orange'}} onClick={showtable}>View Table</Button>
+    <br />
+    <p>
+      Select two excel files, One to update from, another to update to, 
+      we will match their data and update file of choice
+      </p>
+    </div>
+    </>
+
+    const checkInput = () =>{
+      if (!(sheetname && startIndex)){
+        return(
+          <>
+          <Input
           accept="file"
           id="icon-button-file"
           multiple
+          disabled={true}
           type="file"
           aria-labelledby="update from"
           onChange={(e) => {
@@ -337,18 +437,58 @@ function Container() {
           }}
         />
 
-        <label htmlFor="fileToUpdateFrom">Update to: </label>
+        <Input
+        variant="outlined"
+        accept="file"
+        id="icon-button-file"
+        multiple
+        disabled={true}
+        type="file"
+        onChange={(e) => {
+          const fileTwo = e.target.files[0];
+          matchData(fileTwo.name, "xlsx", fileTwo);
+        }}
+      />
+          </>
+          
+        )
+      }
+      else{ return(
+        <>
+        <Input
+          accept="file"
+          id="icon-button-file"
+          multiple
+          disabled={false}
+          type="file"
+          aria-labelledby="update from"
+          onChange={(e) => {
+            const file = e.target.files[0];
+            readExcelFile(file);
+          }}
+        />
+
         <Input
           variant="outlined"
           accept="file"
           id="icon-button-file"
           multiple
+          disabled={false}
           type="file"
           onChange={(e) => {
             const fileTwo = e.target.files[0];
             matchData(fileTwo.name, "xlsx", fileTwo);
           }}
         />
+        </>
+      )}
+    }
+    
+
+  return (
+    <div>
+      <div className="scontainer">
+        {checkInput()}
 
         <TextField
           variant="outlined"
@@ -362,44 +502,68 @@ function Container() {
           value={startIndex}
           onChange={(e) => setstartIndex(e.target.value)}
         />
+
+        <TextField
+          variant="outlined"
+          label="start range"
+          value={rangeS}
+          onChange={(e) => setrangeS(e.target.value)}
+        />
+        <TextField
+          variant="outlined"
+          label="end range"
+          value={rangeE}
+          onChange={(e) => setrangeE(e.target.value)}
+        />
       </div>
-      <TableContainer component={Paper}>
-        <Table sx={{ minWidth: 650 }} aria-label="simple table" id="tablegen">
-          <TableHead sx={{ background: "#eee" }}>
-            <TableRow sx={{ color: "white" }}>
-              <TableCell>Id</TableCell>
-              <TableCell align="right">Date</TableCell>
-              <TableCell align="right">Description</TableCell>
-              <TableCell align="right">No</TableCell>
-              <TableCell align="right">Amount</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {exceldata.map((row) => (
-              <TableRow
-                key={row.__rowNum__}
-                sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-              >
-                <TableCell component="th" scope="row">
-                  {row.__rowNum__}
-                </TableCell>
-                <TableCell align="right">{row.Date}</TableCell>
-                <TableCell align="right">{row.Description}</TableCell>
-                <TableCell align="right">{row.No}</TableCell>
-                <TableCell align="right">{row.Amount}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <div className="dispSheets" style={{display: 'flex'}}>
+    
+      </div>
+      {exceldata.length > 0 ? showtable : showIcon }
+
+
+          <Snackbar open={opensuccess} autoHideDuration={4000} onClose={handlesucClose} anchorOrigin={{vertical: 'center', horizontal:'center'}}>
+        <Alert onClose={handlesucClose} severity="success" sx={{ width: '100%', height: '100%' }}>
+          Data Match Successfull!
+        </Alert>
+      </Snackbar>
+
+      <Snackbar open={openwarn} autoHideDuration={4000} onClose={handlewarClose} anchorOrigin={{vertical: 'top', horizontal:'right'}}>
+        <Alert onClose={handlewarClose} severity="warning" sx={{ width: '100%' }}>
+          Invalid Data!
+        </Alert>
+      </Snackbar>
+
+      <Backdrop
+        sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={open}
+        onClick={handleClose}
+      >
+        <Backdrop color="inherit" />
+      </Backdrop>
     </div>
   );
 }
 
+
+
 export default Container;
 
 /**
- * 
+ * {exceldata.length > 0 ? showtable : showIcon }
+ <TextField
+          variant="outlined"
+          label="start range"
+          value={rangeS}
+          onChange={(e) => setstartIndex(e.target.value)}
+        />
+        <TextField
+          variant="outlined"
+          label="end range"
+          value={rangeE}
+          onChange={(e) => setstartIndex(e.target.value)}
+        />
+
  *  <Select labelId="label" id="select" value="Validate photo">
             <MenuItem value="Convert file">Upload photo </MenuItem>
             <MenuItem value="Validate photo">Validate photo </MenuItem>
