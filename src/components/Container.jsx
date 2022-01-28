@@ -98,10 +98,10 @@ function Container() {
   };
 
   //match data from html table to  workboook
+  /*
   const matchData = (fileName, fileExtension, file) => {
     const promise = new Promise((resolve, reject) => {
-      checkSheetName(); /** checks if sheet name is empty */
-
+      checkSheetName(); //check if sheetname is empty
       checkStartPosition(); //check origin cell input
 
       checkRange(); //Stops user from choosing a range of Ax as start position
@@ -205,6 +205,7 @@ function Container() {
       handlesucClick();
     });
   };
+  */
 
   const matchByRef = (fileName, fileExtension, file) => {
     const promise = new Promise((resolve, reject) => {
