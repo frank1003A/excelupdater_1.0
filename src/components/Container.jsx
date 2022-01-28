@@ -23,13 +23,6 @@ function Container() {
   const [rangeE, setrangeE] = useState("");
   const [selectBank, setselectBank] = useState(0);
 
-  /**Backdrop */
-  const [open, setOpen] = useState(false);
-  const handleClose = () => {
-    setOpen(false);
-  };
-  /**Backdrop end*/
-
   /**Snackbar */
   const Alert = React.forwardRef(function Alert(props, ref) {
     return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
@@ -137,7 +130,7 @@ function Container() {
         console.log("match from", sheet);
 
 
-          const matchData = sheet.findIndex((wsData) => {
+          sheet.findIndex((wsData) => {
             for (let i = 0; i < exceldata.length; i++) {
               if (exceldata[i].code === wsData['CODE']) {
                   const dta = { 
@@ -245,7 +238,7 @@ function Container() {
         console.log("match from", sheet);
 
 
-          const matchData = sheet.findIndex((wsData) => {
+        sheet.findIndex((wsData) => {
             for (let i = 0; i < exceldata.length; i++) {
               if (exceldata[i]['Trans Reference'] === wsData['Reference']) {
                   const dta = { 
@@ -353,7 +346,7 @@ function Container() {
         console.log("match from", sheet);
 
 
-          const matchData = sheet.findIndex((wsData) => {
+      sheet.findIndex((wsData) => {
             for (let i = 0; i < exceldata.length; i++) {
               if (exceldata[i].code === wsData['CODE']) {
                 const dta = { 
