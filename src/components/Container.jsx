@@ -10,10 +10,13 @@ import { Button, TableBody } from "@mui/material";
 import Input from "@mui/material/Input";
 import { TextField } from "@mui/material";
 import imgSh from "../assets/ss2.svg";
+import fdsvg from "../assets/Fidelity-Bank-Icon.svg"
+import zbpng from "../assets/png/Zenith-bank-logo.png"
 import { Paper } from "@mui/material";
 import Snackbar from "@mui/material/Snackbar";
 import MuiAlert from "@mui/material/Alert";
 import { Select, MenuItem } from "@mui/material";
+import { IconButton } from '@mui/material';
 
 function Container() {
   const [exceldata, setexceldata] = useState([]);
@@ -622,10 +625,10 @@ function Container() {
   return (
     <div>
       <div className="scontainer">
-      <Select labelId="label" id="select" value={selectBank} onChange={(e) => setselectBank(e.target.value)}>
-            <MenuItem value={0}>Select Bank </MenuItem>
-            <MenuItem value={1}>Zenith Bank </MenuItem>
-            <MenuItem value={2}>Fidelity Bank </MenuItem>
+      <Select labelId="label" sx={{padding:"1.5px 14px"}} id="select" value={selectBank} onChange={(e) => setselectBank(e.target.value)}>
+            <MenuItem value={0}>Select Bank</MenuItem>
+            <MenuItem value={1}>Zenith <img src={zbpng} alt="zenith logo" /></MenuItem>
+            <MenuItem value={2}>Fidelity<img src={fdsvg} alt="fidelity logo" /></MenuItem>
           </Select>
 
         {checkInput()}

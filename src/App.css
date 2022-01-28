@@ -18,6 +18,11 @@ footer {
   background: #000000de;
 }
 
+img {
+  height: 10px;
+  margin-left: .5rem;
+}
+
 p{
     font-size: x-large;
     text-align: center;
