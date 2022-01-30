@@ -23,14 +23,19 @@ img {
   margin-left: .5rem;
 }
 
-p{
-    font-size: x-large;
-    text-align: center;
-    font-weight: 500;
-    text-anchor: middle;
-    padding-left: 15rem;
-    padding-right: 10rem;
-    color: orange;
+.descp{
+  font-size: x-large;
+  text-align: center;
+  font-weight: 500;
+  text-anchor: middle;
+  /* padding-left: 30rem; */
+  padding: 1rem;
+  /* padding-right: 30rem; */
+  width: 30%;
+  border-radius: 10px;
+  border: 1px solid #eee;
+  color: orange;
+  box-shadow: 10px 10px;
 }
 
 .App-logo {
@@ -58,6 +63,46 @@ label {
   --box-shadow: 0 .5rem 1.5rem rgba(0,0,0,.1);
   /* border: 1px solid orange; */
 }
+
+footer{
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      background: rgb(27, 25, 25);
+      height: auto;
+      color: #fff;
+}
+
+
+footer p{
+  float: left;
+  font-size: 14px;
+  word-spacing: 2px;
+  text-transform: capitalize;
+  color: #fff;
+}
+footer p button{
+ color:#fff;
+ font-size: 16px;
+ background: none;
+ font-weight: 600;
+ border: none;
+ text-decoration: none;
+}
+footer span{
+   text-transform: uppercase;
+   opacity: .4;
+   font-weight: 200;
+}
+
+@media (max-width:500px) {
+  .footer-menu ul{
+    display: flex;
+    margin-top: 10px;
+    margin-bottom: 20px;
+  }
+  }
 
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {

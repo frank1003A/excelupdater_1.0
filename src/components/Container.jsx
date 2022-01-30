@@ -6,17 +6,17 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import { Button, TableBody } from "@mui/material";
+import { TableBody } from "@mui/material";
 import Input from "@mui/material/Input";
 import { TextField } from "@mui/material";
-import imgSh from "../assets/ss2.svg";
+import imgSh from "../assets/391.svg";
 import fdsvg from "../assets/Fidelity-Bank-Icon.svg"
 import zbpng from "../assets/png/Zenith-bank-logo.png"
 import { Paper } from "@mui/material";
 import Snackbar from "@mui/material/Snackbar";
 import MuiAlert from "@mui/material/Alert";
 import { Select, MenuItem } from "@mui/material";
-
+import Tooltip from '@mui/material/Tooltip';
 function Container() {
   const [exceldata, setexceldata] = useState([]);
   const [sheetname, setsheetName] = useState("");
@@ -356,7 +356,7 @@ function Container() {
                   'TOTAL PAID': exceldata[i].Amount,
                   'DATE': exceldata[i]["Transaction Date"],
                   'BALANCE': exceldata[i].Balance,
-                  'REMARK': exceldata[i].Details,
+                  'REMARK': exceldata[i].Details.slice(13, exceldata[i].Details.length),
                   'code':exceldata[i].code
                 }
                 worksheet[sheetname].push(dta); 
@@ -520,14 +520,8 @@ function Container() {
           style={{ height: "300px", padding: "6rem" }}
         />
         <br />
-        <Button
-          variant="contained"
-          style={{ background: "orange" }}
-        >
-          View Table
-        </Button>
         <br />
-        <p>
+        <p className="descp">
           Select two excel files, One to update from, another to update to, we
           will match their data and update file of choice
         </p>
@@ -541,6 +535,7 @@ function Container() {
     if (!(sheetname && startIndex && rangeS && rangeE && selectBank)) {
       return (
         <>
+        <Tooltip title={'Select Bank Excel File'}>
           <Input
             accept="file"
             id="icon-button-file"
@@ -553,8 +548,10 @@ function Container() {
               readExcelFile(file);
             }}
           />
+           </Tooltip>
 
-          <Input
+           <Tooltip title={'Select Manifest to update'}>
+           <Input
             variant="outlined"
             accept="file"
             id="icon-button-file"
@@ -570,11 +567,14 @@ function Container() {
               }
             }}
           />
+           </Tooltip>
+          
         </>
       );
     } else {
       return (
         <>
+        <Tooltip title={'Select Bank Excel File'}>
           <Input
             accept="file"
             id="icon-button-file"
@@ -587,7 +587,9 @@ function Container() {
               readExcelFile(file);
             }}
           />
+          </Tooltip>
 
+          <Tooltip title={'Select Manifest to update'}>
           <Input
             variant="outlined"
             accept="file"
@@ -604,6 +606,7 @@ function Container() {
               }
             }}
           />
+          </Tooltip>
         </>
       );
     }

@@ -1,10 +1,9 @@
 import React from 'react';
-import protek from '../assets/png/protek_logo.png'
 
 const Footer = () => {
   return (
       <footer>
-          <img src={protek} style={{ height: '35px', display: 'flex'}} alt="logo" />
+        <p>copyright &copy;2021 <button>protek</button>  </p>
       </footer>
   )
 };
