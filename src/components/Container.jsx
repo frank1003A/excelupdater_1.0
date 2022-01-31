@@ -343,7 +343,7 @@ function Container() {
 
         const sheet = XLSX.utils.sheet_to_json(wb.Sheets[sheetname], {
           dateNF: "yyyy-mm-dd",
-          range: `${rangeS}:${rangeE}`,
+          range: `${rangeS}:${rangeE}`
         });
 
         console.log("match from", sheet);
