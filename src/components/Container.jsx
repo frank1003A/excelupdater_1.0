@@ -12,7 +12,7 @@ import { TextField } from "@mui/material";
 import imgSh from "../assets/391.svg";
 import fdsvg from "../assets/Fidelity-Bank-Icon.svg"
 import zbpng from "../assets/png/Zenith-bank-logo.png"
-import { Paper } from "@mui/material";
+import { Paper, FormLabel } from "@mui/material";
 import Snackbar from "@mui/material/Snackbar";
 import MuiAlert from "@mui/material/Alert";
 import { Select, MenuItem } from "@mui/material";
@@ -248,7 +248,7 @@ function Container() {
                     'TOTAL PAID': exceldata[i].Amount,
                     'DATE': exceldata[i]['Trans Date'],
                     'BALANCE': exceldata[i].Amount,
-                    'REMARK': exceldata[i].Description,
+                    'REMARK': sliceRemarksZenith(exceldata[i].Description),
                     'Reference':exceldata[i]['Trans Reference']
                   }
                   worksheet[sheetname].push(dta);
@@ -298,7 +298,7 @@ function Container() {
         const updatedWs = XLSX.utils.sheet_add_json(
           wb.Sheets[sheetname],
           worksheet[sheetname],
-          { origin: startIndex.toUpperCase(), skipHeader: true }
+          { origin: startIndex.toUpperCase(), skipHeader: true, raw: true}
         );
         resolve(updatedWs);
 
@@ -356,7 +356,7 @@ function Container() {
                   'TOTAL PAID': exceldata[i].Amount,
                   'DATE': exceldata[i]["Transaction Date"],
                   'BALANCE': exceldata[i].Balance,
-                  'REMARK': exceldata[i].Details.slice(13, exceldata[i].Details.length),
+                  'REMARK': sliceRemarksFidelity(exceldata[i].Details),
                   'code':exceldata[i].code
                 }
                 worksheet[sheetname].push(dta); 
@@ -423,6 +423,41 @@ function Container() {
     promise.then(() => {
       handlesucClick();
     });
+  }
+
+  //slice remark zenith
+  const sliceRemarksZenith = (text) => {
+    const m_idx = text.indexOf('FRM')
+    const m_idx2 = text.indexOf('from')
+    const m_idx2_cap = text.indexOf('FROM')
+    const s_idx = text.indexOf('TO')
+    const s_idx2 = text.indexOf('to')
+    const f_dsh = text.indexOf('/')
+    const l_dsh = text.lastIndexOf('/')
+    let rep = ""
+    if (text.includes('TRF')) rep = text.slice(m_idx + 3, s_idx)
+    if (text.includes('Transfer')) rep = text.slice(m_idx2 + 4, s_idx2)  
+    if (text.includes('NIP') && !(text.includes('TRF') || text.includes('/'))) rep = text
+    if (text.includes('NIP') && text.includes('/') && !(text.includes('TRF'))) rep = text.slice(f_dsh + 1, l_dsh)
+    if (text.includes('TRANSFER')) rep = text.slice(m_idx2_cap + 4, s_idx2)  
+    if (text.includes('OPAY')) rep = text.slice(f_dsh + 6, l_dsh)
+    if (text.includes('STAMP')) rep = text
+  
+    return rep
+  }
+
+  //slice remark fidelity 
+  const sliceRemarksFidelity = (text) => {
+    const m_idx2 = text.indexOf('from')
+    const m_idx2_cap = text.indexOf('FROM')
+    let rep = ""
+    if (text.includes('Transfer')) rep = text.slice(m_idx2 + 4, text.length)  
+    if (text.includes('TRANSFER')) rep = text.slice(m_idx2_cap + 4, text.length)  
+    if (text.includes('STAMP')) rep = text
+    if (text.includes(':') && text.includes('TRF')) rep = text
+    if (text.includes(':') && !(text.includes('TRF'))) rep = text
+  
+    return rep
   }
 
   //check start population position
@@ -522,95 +557,12 @@ function Container() {
         <br />
         <br />
         <p className="descp">
-          Select two excel files, One to update from, another to update to, we
+          Select two excel files, one to update from, another to update to, we
           will match their data and update file of choice
         </p>
       </div>
     </>
   );
-
- 
-
-  const checkInput = () => {
-    if (!(sheetname && startIndex && rangeS && rangeE && selectBank)) {
-      return (
-        <>
-        <Tooltip title={'Select Bank Excel File'}>
-          <Input
-            accept="file"
-            id="icon-button-file"
-            multiple
-            disabled={true}
-            type="file"
-            aria-labelledby="update from"
-            onChange={(e) => {
-              const file = e.target.files[0];
-              readExcelFile(file);
-            }}
-          />
-           </Tooltip>
-
-           <Tooltip title={'Select Manifest to update'}>
-           <Input
-            variant="outlined"
-            accept="file"
-            id="icon-button-file"
-            multiple
-            disabled={true}
-            type="file"
-            onChange={(e) => {
-              const fileTwo = e.target.files[0];
-              if (selectBank === 1 ) {
-                matchByRef( `manifest ${convert(new Date(Date.now()))}`, "xlsx", fileTwo) 
-              }else if (selectBank === 2){
-                matchByCodeFidelity( `manifest ${convert(new Date(Date.now()))}`, "xlsx", fileTwo) 
-              }
-            }}
-          />
-           </Tooltip>
-          
-        </>
-      );
-    } else {
-      return (
-        <>
-        <Tooltip title={'Select Bank Excel File'}>
-          <Input
-            accept="file"
-            id="icon-button-file"
-            multiple
-            disabled={false}
-            type="file"
-            aria-labelledby="update from"
-            onChange={(e) => {
-              const file = e.target.files[0];
-              readExcelFile(file);
-            }}
-          />
-          </Tooltip>
-
-          <Tooltip title={'Select Manifest to update'}>
-          <Input
-            variant="outlined"
-            accept="file"
-            id="icon-button-file"
-            multiple
-            disabled={false}
-            type="file"
-            onChange={(e) => {
-              const fileTwo = e.target.files[0];
-              if (selectBank === 1 ) {
-                matchByRef( `manifest ${convert(new Date(Date.now()))}`, "xlsx", fileTwo) 
-              }else if (selectBank === 2){
-                matchByCodeFidelity( `manifest ${convert(new Date(Date.now()))}`, "xlsx", fileTwo) 
-              }
-            }}
-          />
-          </Tooltip>
-        </>
-      );
-    }
-  };
 
   const displayByBank = () => {
     if (exceldata.length > 0 && selectBank === 1) { 
@@ -627,14 +579,49 @@ function Container() {
   return (
     <div>
       <div className="scontainer">
-      <Select labelId="label" sx={{padding:"1.5px 14px"}} id="select" value={selectBank} onChange={(e) => setselectBank(e.target.value)}>
+        <div className="bankinfo">
+        <FormLabel>Bank Excel Details</FormLabel>
+        <Select labelId="label" sx={{padding:"1.5px 14px"}} id="select" value={selectBank} onChange={(e) => setselectBank(e.target.value)}>
             <MenuItem value={0}>Select Bank</MenuItem>
             <MenuItem value={1}>Zenith <img src={zbpng} alt="zenith logo" /></MenuItem>
             <MenuItem value={2}>Fidelity<img src={fdsvg} alt="fidelity logo" /></MenuItem>
           </Select>
 
-        {checkInput()}
-
+          <Tooltip title={'Select Bank Excel File'}>
+          <Input
+            accept="file"
+            id="icon-button-file"
+            multiple
+            disabled={false}
+            type="file"
+            aria-labelledby="update from"
+            onChange={(e) => {
+              const file = e.target.files[0];
+              readExcelFile(file);
+            }}
+          />
+          </Tooltip>
+        </div>
+        <div className="sheetinfo">
+        <FormLabel>Manifest Excel Details</FormLabel>
+        <div className="inerform">
+        <Tooltip title={'Select Manifest to update'}>
+           <Input
+            variant="outlined"
+            accept="file"
+            id="icon-button-file"
+            multiple
+            type="file"
+            onChange={(e) => {
+              const fileTwo = e.target.files[0];
+              if (selectBank === 1 ) {
+                matchByRef( `manifest ${convert(new Date(Date.now()))}`, "xlsx", fileTwo) 
+              }else if (selectBank === 2){
+                matchByCodeFidelity( `manifest ${convert(new Date(Date.now()))}`, "xlsx", fileTwo) 
+              }
+            }}
+          />
+           </Tooltip>
         <TextField
           variant="outlined"
           label="Sheet Name"
@@ -660,6 +647,9 @@ function Container() {
           value={rangeE.toUpperCase()}
           onChange={(e) => setrangeE(e.target.value)}
         />
+        </div>
+
+        </div>
 
       </div>
       <div className="dispSheets" style={{ display: "flex" }}></div>
@@ -700,11 +690,46 @@ function Container() {
 
 export default Container;
 
-/**const dta = { 
-                    'TOTAL PAID': exceldata[i].Amount,
-                    'DATE': exceldata[i]["Transaction Date"],
-                    'BALANCE': exceldata[i].Balance,
-                    'REMARK': exceldata[i].Details,
-                    'code':exceldata[i].code
-                  }
-                  worksheet[sheetname].push(dta); */
+/** const checkInput = () => {
+    if (!(sheetname && startIndex && rangeS && rangeE && selectBank)) {
+      return (
+        <>
+        <Tooltip title={'Select Bank Excel File'}>
+          <Input
+            accept="file"
+            id="icon-button-file"
+            multiple
+            disabled={true}
+            type="file"
+            aria-labelledby="update from"
+            onChange={(e) => {
+              const file = e.target.files[0];
+              readExcelFile(file);
+            }}
+          />
+           </Tooltip>
+
+          
+        </>
+      );
+    } else {
+      return (
+        <>
+        <Tooltip title={'Select Bank Excel File'}>
+          <Input
+            accept="file"
+            id="icon-button-file"
+            multiple
+            disabled={false}
+            type="file"
+            aria-labelledby="update from"
+            onChange={(e) => {
+              const file = e.target.files[0];
+              readExcelFile(file);
+            }}
+          />
+          </Tooltip>
+        </>
+      );
+    }
+  }; */
