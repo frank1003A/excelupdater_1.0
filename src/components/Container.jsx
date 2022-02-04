@@ -128,7 +128,7 @@ function Container() {
           range: `${rangeS}:${rangeE}`,
         });
 
-        console.log("match from", sheet);
+        //console.log("match from", sheet);
 
         sheet.findIndex((wsData) => {
           for (let i = 0; i < exceldata.length; i++) {
@@ -183,7 +183,7 @@ function Container() {
         worksheet[sheetname].length = originalLength;
         //map utility function end
 
-        console.log("sheetmatch", worksheet[sheetname]);
+        //console.log("sheetmatch", worksheet[sheetname]);
 
         const updatedWs = XLSX.utils.sheet_add_json(
           wb.Sheets[sheetname],
