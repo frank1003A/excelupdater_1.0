@@ -128,19 +128,20 @@ function Container() {
           range: `${rangeS}:${rangeE}`,
         });
 
-        //console.log("match from", sheet);
+        console.log("match from", sheet);
 
         sheet.findIndex((wsData) => {
           for (let i = 0; i < exceldata.length; i++) {
             if (exceldata[i]["Trans Reference"] === wsData["Reference"]) {
-              const dta = {
-                "TOTAL PAID": informSplit(sheet,wsData["Reference"], exceldata[i].Amount),
+              let dta = {
+                "TOTAL PAID": exceldata[i].Amount,
                 DATE: exceldata[i]["Trans Date"],
                 BALANCE: `${Math.round(exceldata[i].Amount - wsData.TOTAL)} (${checkDebt(wsData.TOTAL, exceldata[i].Amount)})`,
                 REMARK: sliceRemarksZenith(exceldata[i].Description),
                 Reference: exceldata[i]["Trans Reference"],
+                kilo: wsData.KILO
               };
-              worksheet[sheetname].push(dta);
+              worksheet[sheetname].push(dta)
             } else {
               //do nothing
             }
@@ -163,11 +164,14 @@ function Container() {
         const originalLength = worksheet[sheetname].length;
 
         const provide = (arr, field, index) => {
-          let result = arr.filter(
-            (a) => a["Reference"] === sheet[index][field]
-          );
+          let result = arr.filter((a) => a.Reference === sheet[index][field]);
           if (result.length === 0) {
-            result = arr.filter((a) => a["Reference"] === "");
+            result = arr.filter((a) => a.Reference === "");
+          }
+
+          if (result[0].Reference > 1) {
+            let rest = result.filter((a) => a.kilo === sheet[index].KILO)
+            result[0] = rest[0]
           }
           return result[0];
         };
@@ -183,11 +187,21 @@ function Container() {
         worksheet[sheetname].length = originalLength;
         //map utility function end
 
-        //console.log("sheetmatch", worksheet[sheetname]);
+        const DSHEET = worksheet[sheetname].map(data => {
+          let info =  { 
+            "TOTAL PAID": data["TOTAL PAID"] ,
+            DATE: data['DATE'],
+            BALANCE: data.BALANCE,
+            REMARK: data.REMARK
+          }
+          return info
+        })
+
+       console.log("sheetmatch", worksheet[sheetname]);
 
         const updatedWs = XLSX.utils.sheet_add_json(
           wb.Sheets[sheetname],
-          worksheet[sheetname],
+          DSHEET,
           { origin: startIndex.toUpperCase(), skipHeader: true, raw: true }
         );
         resolve(updatedWs);
@@ -210,48 +224,9 @@ function Container() {
 
   const checkDebt = (topay, paid) => {
     let verdict = "";
-    topay < paid ? (verdict = "overpaid") : (verdict = `owing`);
+    topay < paid ? (verdict = "overpaid") : (verdict = "owing");
     return verdict;
   };
-
-  /*
-  const getItemCount = (itemTable, data) => {
-    const count = itemTable.filter((dta) => dta["PHONE NO"] === data);
-    return count.length;
-  };
-  */
-
-  const getAmtPaidNo = (itemTable, data) => {
-    const count = itemTable.filter((dta) => dta["Reference"] === data);
-    return count.length;
-  }
-
-  /*
-  const getTopayTotal = (arr) => {
-    const sum = arr.reduce((sum, total) => (sum = sum + (total.TOTAL || 0)),0);
-    return Math.round(sum);
-  };
-  */
-
-  const informSplit = (ws,ref, amt) => {
-    let amount = amt
-    const pv = getAmtPaidNo(ws, ref)
-    if (pv > 1) amount = ` ${amt} (split) `
-    return amount
-  }
-
-  /*
-  const splitPayment = (itemTable, data, ref, toPay, paid) => {
-    let amount = paid
-    let topay = toPay
-    const num = getItemCount(itemTable, data);
-    const pv = getAmtPaidNo(itemTable, ref)
-    if (pv > 1) amount = topay
-    const rem = itemTable.reduce((dv, value) => (dv = dv - value.TOTAL),paid); //remainder
-    const totalTP = getTopayTotal(itemTable);
-    return amount;
-  };
-  */
 
   const matchByCodeFidelity = (fileName, fileExtension, file) => {
     const promise = new Promise((resolve, reject) => {
@@ -290,9 +265,10 @@ function Container() {
               const dta = {
                 "TOTAL PAID": exceldata[i].Amount,
                 DATE: exceldata[i]["Transaction Date"],
-                BALANCE: exceldata[i].Balance,
+                BALANCE:  `${Math.round(exceldata[i].Amount - wsData.TOTAL)} (${checkDebt(wsData.TOTAL, exceldata[i].Amount)})`,
                 REMARK: sliceRemarksFidelity(exceldata[i].Details),
                 code: exceldata[i].code,
+                kilo: wsData.KILO
               };
               worksheet[sheetname].push(dta);
             } else {
@@ -317,9 +293,13 @@ function Container() {
         const originalLength = worksheet[sheetname].length;
 
         const provide = (arr, field, index) => {
-          let result = arr.filter((a) => a["code"] === sheet[index][field]);
+          let result = arr.filter((a) => a.code === sheet[index][field]);
           if (result.length === 0) {
-            result = arr.filter((a) => a["code"] === "");
+            result = arr.filter((a) => a.code === "");
+          }
+          if (result[0].code.length > 1) {
+            let rest = result.filter((a) => a.kilo === sheet[index].KILO)
+            result[0] = rest[0]
           }
           return result[0];
         };
@@ -335,11 +315,21 @@ function Container() {
         worksheet[sheetname].length = originalLength;
         //map utility function end
 
-        console.log("sheetmatch", worksheet[sheetname]);
+        const DSHEET = worksheet[sheetname].map(data => {
+          let info =  { 
+            "TOTAL PAID": data["TOTAL PAID"] ,
+            DATE: data['DATE'],
+            BALANCE: data.BALANCE,
+            REMARK: data.REMARK
+          }
+          return info
+        })
+
+        //console.log("sheetmatch", worksheet[sheetname]);
 
         const updatedWs = XLSX.utils.sheet_add_json(
           wb.Sheets[sheetname],
-          worksheet[sheetname],
+          DSHEET,
           { origin: startIndex.toUpperCase(), skipHeader: true }
         );
         resolve(updatedWs);
