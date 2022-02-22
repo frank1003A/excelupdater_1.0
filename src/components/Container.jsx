@@ -159,7 +159,12 @@ function Container() {
             }
           }
           return 0;
-        });
+        }); 
+
+          if (worksheet[sheetname].length < 1) {
+            checkMatch()
+            return
+          }
 
         while (worksheet[sheetname].length !== sheet.length) {
           worksheet[sheetname].push({
@@ -187,11 +192,6 @@ function Container() {
             result[0] = rest[0];
           }
 
-          let fullMatch = result.filter((a) => a.Reference === "")
-          if (fullMatch.length === result.length) {
-            checkMatch()
-            return
-          }
           return result[0];
         };
 
@@ -306,6 +306,13 @@ function Container() {
           return 0;
         });
 
+        console.log(worksheet[sheetname])
+
+        if (worksheet[sheetname].length < 1) {
+          checkMatch()
+          return
+        }
+
         while (worksheet[sheetname].length !== sheet.length) {
           worksheet[sheetname].push({
             "TOTAL PAID": "",
@@ -330,11 +337,6 @@ function Container() {
             result[0] = rest[0];
           }
 
-          let fullMatch = result.filter((a) => a.code === "")
-          if (fullMatch.length === result.length) {
-            checkMatch()
-            return
-          }
           return result[0];
         };
 
@@ -348,6 +350,8 @@ function Container() {
 
         worksheet[sheetname].length = originalLength;
         //map utility function end
+
+        console.log("sheetmatch", worksheet[sheetname])
 
         const DSHEET = worksheet[sheetname].map(data => {
           let info =  { 
@@ -714,7 +718,7 @@ function Container() {
         <label htmlFor="p">Possible Reasons: </label>
         <FormLabel  sx={{textAlign: 'left', color: 'black'}}>Check that your bank file is the intended file you want to use.</FormLabel>
         <FormLabel sx={{textAlign: 'left', color: 'black'}}>Check that your reference numbers or codes are equivalent.</FormLabel>
-        <FormLabel sx={{textAlign: 'left', color: 'black'}}>Check that the manifest information typed is accurate.</FormLabel>
+        <FormLabel sx={{textAlign: 'left', color: 'black'}}>Check that the manifest information, range and sheetname typed is accurate.</FormLabel>
         <br/>
         <Button 
         variant="primary" 
