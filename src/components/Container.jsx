@@ -29,10 +29,18 @@ function Container() {
 
   /**Modal State */
   const [openNoMatchModal, setopenNoMatchModal] = useState(false);
+  const [openModalOne, setopenModalOne] = useState(false)
+  const [openModalThree, setopenModalThree] = useState(false)
 
   //modal method
   const handleOpenModal = () => setopenNoMatchModal(true);
   const handleCloseModal = () => setopenNoMatchModal(false);
+  //
+  const handleopenModalOne = () => setopenModalOne(true);
+  const handlecloseModalOne = () => setopenModalOne(false);
+  //
+  const handleopenModalThree = () => setopenModalThree(true);
+  const handlecloseModalThree = () => setopenModalThree(false);
 
   /**Snackbar */
   const Alert = React.forwardRef(function Alert(props, ref) {
@@ -115,19 +123,18 @@ function Container() {
 
       checkStartPosition(); //check origin cell input
 
-      checkRange(); //Stops user from choosing a range of Ax as start position
 
       const fileReader = new FileReader();
       fileReader.readAsArrayBuffer(file);
 
       fileReader.onload = (e) => {
         const bufferArray = e.target.result;
-        const wb = XLSX.read(bufferArray, { type: "buffer", cellDates: true, });
+        const wb = XLSX.read(bufferArray, { type: "buffer", cellDates: true, cellStyles: true });
 
         let worksheet = {};
 
         for (const sheetName of wb.SheetNames)
-          worksheet[sheetName] = XLSX.utils.sheet_to_json(wb.Sheets);
+          worksheet[sheetName] = XLSX.utils.sheet_to_json(wb.Sheets); 
 
         //wb.Sheets[sheetname]["!ref"] = "A2:P40";
         // wb.Sheets[sheetname]["!ref"] = getRange()
@@ -206,8 +213,6 @@ function Container() {
         worksheet[sheetname].length = originalLength;
         //map utility function end
 
-        console.log(worksheet[sheetname])
-
         const DSHEET = worksheet[sheetname].map((data) => {
           let info = {
             "TOTAL PAID": data["TOTAL PAID"],
@@ -241,7 +246,7 @@ function Container() {
     });
   };
 
-  /**check for no match */
+  /**check for zero match */
   const checkMatch = () => {
       handleOpenModal()
   }
@@ -259,8 +264,6 @@ function Container() {
       checkSheetName(); /** checks if sheet name is empty */
 
       checkStartPosition(); //check origin cell input
-
-      checkRange(); //Stops user from choosing a range of Ax as start position
 
       const fileReader = new FileReader();
       fileReader.readAsArrayBuffer(file);
@@ -306,8 +309,6 @@ function Container() {
           return 0;
         });
 
-        console.log(worksheet[sheetname])
-
         if (worksheet[sheetname].length < 1) {
           checkMatch()
           return
@@ -351,8 +352,6 @@ function Container() {
         worksheet[sheetname].length = originalLength;
         //map utility function end
 
-        console.log("sheetmatch", worksheet[sheetname])
-
         const DSHEET = worksheet[sheetname].map(data => {
           let info =  { 
             "TOTAL PAID": data["TOTAL PAID"] ,
@@ -362,9 +361,7 @@ function Container() {
           }
           return info
         })
-
-        //console.log("sheetmatch", worksheet[sheetname]);
-
+        
         const updatedWs = XLSX.utils.sheet_add_json(
           wb.Sheets[sheetname],
           DSHEET,
@@ -426,22 +423,20 @@ function Container() {
 
   //check start population position
   const checkStartPosition = () => {
-    if (!startIndex || startIndex === null || startIndex === undefined)
-      return alert("invalid start position");
+    if (!startIndex || startIndex === null || startIndex === undefined) handleopenModalOne()
   };
 
   /**check valid range for match and update: this only takes effect when matching updates*/
+  /*
   const checkRange = () => {
-    const r = startIndex.slice(0, 1); // A or a
-    if (r === ("a" || "A"))
-      return alert("invalid range\n select a range from Bx-Zx");
+    const r = rangeS.slice(0, 1); // A or a
+    if (r === ("a" || "A")) handleopenModalTwo()
   };
+  */
 
   //check sheet name
   const checkSheetName = () => {
-    if (!sheetname || sheetname === undefined) {
-      return alert("Invalid Sheet Name\nPlease confirm that sheet name exist");
-    }
+    if (!sheetname || sheetname === undefined) handleopenModalThree()
   };
 
   //update workboook
@@ -727,6 +722,23 @@ function Container() {
           window.location.reload()
         }}>Continue</Button>
       </Modal>
+
+      <Modal
+        className="formtable"
+        OpenModal={openModalOne}
+        handleCloseModal={handlecloseModalOne}
+        >
+          <p> You didn't type cell to begin population</p>
+          <Button sx={{background: 'orange'}} onClick={handlecloseModalOne} >Ok</Button>
+        </Modal>
+
+        <Modal 
+          className="formtable"
+          OpenModal={openModalThree}
+          handleCloseModal={handlecloseModalThree}>
+            <p> you did not input a sheetname confirm that sheet name exist </p>
+            <Button sx={{background: 'orange'}} onClick={handlecloseModalThree} >Ok</Button>
+          </Modal>
 
       <Snackbar
         open={opensuccess}
