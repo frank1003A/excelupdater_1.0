@@ -126,9 +126,6 @@ export default function PrimarySearchAppBar() {
             Mapsheet
           </Typography>
           <Box sx={{ flexGrow: 1 }} />
-          <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
-              <Button variant='contained' sx={{background: 'orange'}}>View Table</Button>
-          </Box>
           <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
             <IconButton
               size="large"

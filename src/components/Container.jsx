@@ -8,15 +8,16 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import { TableBody } from "@mui/material";
 import Input from "@mui/material/Input";
-import { TextField, Button } from "@mui/material";
+import { TextField, Button} from "@mui/material";
 import imgSh from "../assets/tb.svg";
 import fdsvg from "../assets/Fidelity-Bank-Icon.svg";
 import zbpng from "../assets/png/Zenith-bank-logo.png";
-import { Paper, FormLabel } from "@mui/material";
+import { Paper, FormLabel} from "@mui/material";
 import Snackbar from "@mui/material/Snackbar";
 import MuiAlert from "@mui/material/Alert";
 import { Select, MenuItem } from "@mui/material";
 import Tooltip from "@mui/material/Tooltip";
+import Modal from "./Modal"
 
 function Container() {
   const [exceldata, setexceldata] = useState([]);
@@ -25,6 +26,14 @@ function Container() {
   const [rangeS, setrangeS] = useState("");
   const [rangeE, setrangeE] = useState("");
   const [selectBank, setselectBank] = useState(0);
+
+  /**Modal State */
+  const [openNoMatchModal, setopenNoMatchModal] = useState(false);
+
+  //modal method
+  const handleOpenModal = () => setopenNoMatchModal(true);
+  const handleCloseModal = () => setopenNoMatchModal(false);
+
   /**Snackbar */
   const Alert = React.forwardRef(function Alert(props, ref) {
     return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
@@ -66,7 +75,7 @@ function Container() {
     return [mnth, day, date.getFullYear()].join("/");
   };
 
-  //read xlsx file and return as html table
+  /**read xlsx file and return as html table */
   const readExcelFile = (file) => {
     const promise = new Promise((resolve, reject) => {
       const fileReader = new FileReader();
@@ -99,6 +108,7 @@ function Container() {
     });
   };
 
+  /**Match excel data by reference number */
   const matchByRef = (fileName, fileExtension, file) => {
     const promise = new Promise((resolve, reject) => {
       checkSheetName(); /** checks if sheet name is empty */
@@ -112,7 +122,7 @@ function Container() {
 
       fileReader.onload = (e) => {
         const bufferArray = e.target.result;
-        const wb = XLSX.read(bufferArray, { type: "buffer", cellDates: true });
+        const wb = XLSX.read(bufferArray, { type: "buffer", cellDates: true, });
 
         let worksheet = {};
 
@@ -136,12 +146,14 @@ function Container() {
               let dta = {
                 "TOTAL PAID": exceldata[i].Amount,
                 DATE: exceldata[i]["Trans Date"],
-                BALANCE: `${Math.round(exceldata[i].Amount - wsData.TOTAL)} (${checkDebt(wsData.TOTAL, exceldata[i].Amount)})`,
+                BALANCE: `${Math.round(
+                  Math.abs(exceldata[i].Amount - wsData.TOTAL)
+                )} (${checkDebt(wsData.TOTAL, exceldata[i].Amount)})`,
                 REMARK: sliceRemarksZenith(exceldata[i].Description),
                 Reference: exceldata[i]["Trans Reference"],
-                kilo: wsData.KILO
+                kilo: wsData.KILO,
               };
-              worksheet[sheetname].push(dta)
+              worksheet[sheetname].push(dta);
             } else {
               //do nothing
             }
@@ -165,13 +177,20 @@ function Container() {
 
         const provide = (arr, field, index) => {
           let result = arr.filter((a) => a.Reference === sheet[index][field]);
+
           if (result.length === 0) {
             result = arr.filter((a) => a.Reference === "");
           }
 
           if (result[0].Reference > 1) {
-            let rest = result.filter((a) => a.kilo === sheet[index].KILO)
-            result[0] = rest[0]
+            let rest = result.filter((a) => a.kilo === sheet[index].KILO);
+            result[0] = rest[0];
+          }
+
+          let fullMatch = result.filter((a) => a.Reference === "")
+          if (fullMatch.length === result.length) {
+            checkMatch()
+            return
           }
           return result[0];
         };
@@ -187,17 +206,17 @@ function Container() {
         worksheet[sheetname].length = originalLength;
         //map utility function end
 
-        const DSHEET = worksheet[sheetname].map(data => {
-          let info =  { 
-            "TOTAL PAID": data["TOTAL PAID"] ,
-            DATE: data['DATE'],
-            BALANCE: data.BALANCE,
-            REMARK: data.REMARK
-          }
-          return info
-        })
+        console.log(worksheet[sheetname])
 
-       //console.log("sheetmatch", worksheet[sheetname]);
+        const DSHEET = worksheet[sheetname].map((data) => {
+          let info = {
+            "TOTAL PAID": data["TOTAL PAID"],
+            DATE: data["DATE"],
+            BALANCE: data.BALANCE,
+            REMARK: data.REMARK,
+          };
+          return (info)
+        });
 
         const updatedWs = XLSX.utils.sheet_add_json(
           wb.Sheets[sheetname],
@@ -222,12 +241,19 @@ function Container() {
     });
   };
 
+  /**check for no match */
+  const checkMatch = () => {
+      handleOpenModal()
+  }
+
+  /**Check if customer overpaid or underpaid */
   const checkDebt = (topay, paid) => {
     let verdict = "";
     topay < paid ? (verdict = "overpaid") : (verdict = "owing");
     return verdict;
   };
 
+  /**Match code based on fidelity bank excel file */      
   const matchByCodeFidelity = (fileName, fileExtension, file) => {
     const promise = new Promise((resolve, reject) => {
       checkSheetName(); /** checks if sheet name is empty */
@@ -257,7 +283,7 @@ function Container() {
           range: `${rangeS}:${rangeE}`,
         });
 
-       // console.log("match from", sheet);
+        // console.log("match from", sheet);
 
         sheet.findIndex((wsData) => {
           for (let i = 0; i < exceldata.length; i++) {
@@ -265,10 +291,12 @@ function Container() {
               const dta = {
                 "TOTAL PAID": exceldata[i].Amount,
                 DATE: exceldata[i]["Transaction Date"],
-                BALANCE:  `${Math.round(exceldata[i].Amount - wsData.TOTAL)} (${checkDebt(wsData.TOTAL, exceldata[i].Amount)})`,
+                BALANCE: `${Math.round(
+                  Math.abs(exceldata[i].Amount - wsData.TOTAL)
+                )} (${checkDebt(wsData.TOTAL, exceldata[i].Amount)})`,
                 REMARK: sliceRemarksFidelity(exceldata[i].Details),
                 code: exceldata[i].code,
-                kilo: wsData.KILO
+                kilo: wsData.KILO,
               };
               worksheet[sheetname].push(dta);
             } else {
@@ -298,8 +326,14 @@ function Container() {
             result = arr.filter((a) => a.code === "");
           }
           if (result[0].code.length > 1) {
-            let rest = result.filter((a) => a.kilo === sheet[index].KILO)
-            result[0] = rest[0]
+            let rest = result.filter((a) => a.kilo === sheet[index].KILO);
+            result[0] = rest[0];
+          }
+
+          let fullMatch = result.filter((a) => a.code === "")
+          if (fullMatch.length === result.length) {
+            checkMatch()
+            return
           }
           return result[0];
         };
@@ -350,7 +384,7 @@ function Container() {
     });
   };
 
-  //slice remark zenith
+  /**slice zenith bank description column */
   const sliceRemarksZenith = (text) => {
     const m_idx = text.indexOf("FRM");
     const m_idx2 = text.indexOf("from");
@@ -372,7 +406,7 @@ function Container() {
     return rep;
   };
 
-  //slice remark fidelity
+  /**slice remark fidelity bank */
   const sliceRemarksFidelity = (text) => {
     const m_idx2 = text.indexOf("from");
     const m_idx2_cap = text.indexOf("FROM");
@@ -392,7 +426,7 @@ function Container() {
       return alert("invalid start position");
   };
 
-  //check valid range for match and update: this only takes effect when matching updates
+  /**check valid range for match and update: this only takes effect when matching updates*/
   const checkRange = () => {
     const r = startIndex.slice(0, 1); // A or a
     if (r === ("a" || "A"))
@@ -417,7 +451,6 @@ function Container() {
               <TableCell>Id</TableCell>
               <TableCell align="right">Trans Reference</TableCell>
               <TableCell align="right">Trans Date</TableCell>
-              <TableCell align="right">code</TableCell>
               <TableCell align="right">Amount</TableCell>
             </TableRow>
           </TableHead>
@@ -431,7 +464,6 @@ function Container() {
               </TableCell>
               <TableCell align="right">{row["Trans Reference"]}</TableCell>
               <TableCell align="right">{convert(row["Trans Date"])}</TableCell>
-              <TableCell align="right">{row["code"]}</TableCell>
               <TableCell align="right">{row.Amount}</TableCell>
             </TableRow>
           </TableBody>
@@ -483,12 +515,13 @@ function Container() {
           style={{ height: "300px", padding: "6rem" }}
         />
         <div className="desc">
-        <p>Table will display here</p>
+          <p>Table will display here</p>
         </div>
       </div>
     </>
   );
 
+  /**Display and match data based on bank: fidelity bank or zenith bank*/
   const displayByBank = () => {
     if (exceldata.length > 0 && selectBank === 1) {
       return showtableForZenith;
@@ -499,6 +532,113 @@ function Container() {
       return showIcon;
     }
   };
+
+  const bankControl = () => {
+    if (selectBank === 0) {
+      return (
+        <>
+        <Tooltip title={"Select Bank Excel File"}>
+            <Input
+              accept="file"
+              id="icon-button-file-bank"
+              multiple
+              disabled={true}
+              type="file"
+              aria-labelledby="update from"
+              onChange={(e) => {
+                const file = e.target.files[0];
+                readExcelFile(file);
+              }}
+            />
+          </Tooltip>
+        </>
+      )
+    }else {
+      return (
+        <>
+      <Tooltip title={"Select Bank Excel File"}>
+            <Input
+              accept="file"
+              id="icon-button-file-bank"
+              multiple
+              disabled={false}
+              type="file"
+              aria-labelledby="update from"
+              onChange={(e) => {
+                const file = e.target.files[0];
+                readExcelFile(file);
+              }}
+            />
+          </Tooltip>
+      </>
+      )
+    }
+  } 
+
+  const manifestControl = () => {
+    if (exceldata.length < 1){
+      return (
+        <>
+        <Tooltip title={"Select Manifest to update"}>
+              <Input
+                variant="outlined"
+                accept="file"
+                id="icon-button-file-manifest"
+                multiple
+                disabled={true}
+                type="file"
+                onChange={(e) => {
+                  const fileTwo = e.target.files[0];
+                  if (selectBank === 1) {
+                    matchByRef(
+                      `manifest ${convert(new Date(Date.now()))}`,
+                      "xlsx",
+                      fileTwo
+                    );
+                  } else if (selectBank === 2) {
+                    matchByCodeFidelity(
+                      `manifest ${convert(new Date(Date.now()))}`,
+                      "xlsx",
+                      fileTwo
+                    );
+                  }
+                }}
+              />
+            </Tooltip>
+        </>
+      )
+    }
+    else {
+      return (
+        <Tooltip title={"Select Manifest to update"}>
+              <Input
+                variant="outlined"
+                accept="file"
+                id="icon-button-file-manifest"
+                multiple
+                disabled={false}
+                type="file"
+                onChange={(e) => {
+                  const fileTwo = e.target.files[0];
+                  if (selectBank === 1) {
+                    matchByRef(
+                      `manifest ${convert(new Date(Date.now()))}`,
+                      "xlsx",
+                      fileTwo
+                    );
+                  } else if (selectBank === 2) {
+                    matchByCodeFidelity(
+                      `manifest ${convert(new Date(Date.now()))}`,
+                      "xlsx",
+                      fileTwo
+                    );
+                  }
+                }}
+              />
+            </Tooltip>
+      )
+    }
+  }
 
   return (
     <div>
@@ -521,22 +661,7 @@ function Container() {
               <img src={fdsvg} alt="fidelity logo" />
             </MenuItem>
           </Select>
-
-          <Tooltip title={"Select Bank Excel File"}>
-            <Input
-              accept="file"
-              id="icon-button-file"
-              multiple
-              disabled={false}
-              type="file"
-              aria-labelledby="update from"
-              onChange={(e) => {
-                const file = e.target.files[0];
-                readExcelFile(file);
-              }}
-            />
-          </Tooltip>
-
+          {bankControl()}
           <Button
             variant="contained"
             onClick={() => {
@@ -549,31 +674,7 @@ function Container() {
         <div className="sheetinfo">
           <FormLabel>Manifest Excel Details</FormLabel>
           <div className="inerform">
-            <Tooltip title={"Select Manifest to update"}>
-              <Input
-                variant="outlined"
-                accept="file"
-                id="icon-button-file"
-                multiple
-                type="file"
-                onChange={(e) => {
-                  const fileTwo = e.target.files[0];
-                  if (selectBank === 1) {
-                    matchByRef(
-                      `manifest ${convert(new Date(Date.now()))}`,
-                      "xlsx",
-                      fileTwo
-                    );
-                  } else if (selectBank === 2) {
-                    matchByCodeFidelity(
-                      `manifest ${convert(new Date(Date.now()))}`,
-                      "xlsx",
-                      fileTwo
-                    );
-                  }
-                }}
-              />
-            </Tooltip>
+            {manifestControl()}
             <TextField
               variant="outlined"
               label="Sheet Name"
@@ -583,7 +684,7 @@ function Container() {
             <TextField
               variant="outlined"
               label="Select cell to begin"
-              value={startIndex}
+              value={startIndex.toUpperCase()}
               onChange={(e) => setstartIndex(e.target.value)}
             />
 
@@ -603,6 +704,25 @@ function Container() {
         </div>
       </div>
       <div className="dispSheets">{displayByBank()}</div>
+
+          <Modal
+        className="formtable"
+        OpenModal={openNoMatchModal}
+        handleCloseModal={handleCloseModal}
+      >
+        <p>No data from bank file matches data from manifest</p>
+        <label htmlFor="p">Possible Reasons: </label>
+        <FormLabel  sx={{textAlign: 'left', color: 'black'}}>Check that your bank file is the intended file you want to use.</FormLabel>
+        <FormLabel sx={{textAlign: 'left', color: 'black'}}>Check that your reference numbers or codes are equivalent.</FormLabel>
+        <FormLabel sx={{textAlign: 'left', color: 'black'}}>Check that the manifest information typed is accurate.</FormLabel>
+        <br/>
+        <Button 
+        variant="primary" 
+        sx={{background: 'orange'}} 
+        onClick={() => {
+          window.location.reload()
+        }}>Continue</Button>
+      </Modal>
 
       <Snackbar
         open={opensuccess}
@@ -645,4 +765,12 @@ export default Container;
       const lowestTP = itemTable.reduce((lowest, idx) => (lowest = Math.min(idx.TOTAL)),0);
       console.log(lowestTP)
       toPay > lowestTP ? paid = toPay : paid = Math.round(toPay + rem);
-    } */
+
+    } 
+    
+    <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
+              <Button variant='contained' sx={{background: 'orange'}}
+              onClick={() => {handleOpenModal()}}
+              >Show information</Button>
+          </Box>
+    */
