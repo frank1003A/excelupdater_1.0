@@ -29,18 +29,10 @@ function Container() {
 
   /**Modal State */
   const [openNoMatchModal, setopenNoMatchModal] = useState(false);
-  const [openModalOne, setopenModalOne] = useState(false)
-  const [openModalThree, setopenModalThree] = useState(false)
 
   //modal method
   const handleOpenModal = () => setopenNoMatchModal(true);
   const handleCloseModal = () => setopenNoMatchModal(false);
-  //
-  const handleopenModalOne = () => setopenModalOne(true);
-  const handlecloseModalOne = () => setopenModalOne(false);
-  //
-  const handleopenModalThree = () => setopenModalThree(true);
-  const handlecloseModalThree = () => setopenModalThree(false);
 
   /**Snackbar */
   const Alert = React.forwardRef(function Alert(props, ref) {
@@ -119,10 +111,6 @@ function Container() {
   /**Match excel data by reference number */
   const matchByRef = (fileName, fileExtension, file) => {
     const promise = new Promise((resolve, reject) => {
-      checkSheetName(); /** checks if sheet name is empty */
-
-      checkStartPosition(); //check origin cell input
-
 
       const fileReader = new FileReader();
       fileReader.readAsArrayBuffer(file);
@@ -261,9 +249,6 @@ function Container() {
   /**Match code based on fidelity bank excel file */      
   const matchByCodeFidelity = (fileName, fileExtension, file) => {
     const promise = new Promise((resolve, reject) => {
-      checkSheetName(); /** checks if sheet name is empty */
-
-      checkStartPosition(); //check origin cell input
 
       const fileReader = new FileReader();
       fileReader.readAsArrayBuffer(file);
@@ -420,25 +405,6 @@ function Container() {
     if (text.includes(":") && !text.includes("TRF")) rep = text;
     return rep;
   };
-
-  //check start population position
-  const checkStartPosition = () => {
-    if (!startIndex || startIndex === null || startIndex === undefined) handleopenModalOne()
-  };
-
-  /**check valid range for match and update: this only takes effect when matching updates*/
-  /*
-  const checkRange = () => {
-    const r = rangeS.slice(0, 1); // A or a
-    if (r === ("a" || "A")) handleopenModalTwo()
-  };
-  */
-
-  //check sheet name
-  const checkSheetName = () => {
-    if (!sheetname || sheetname === undefined) handleopenModalThree()
-  };
-
   //update workboook
 
   const showtableForZenith = exceldata.map((row) => {
@@ -713,7 +679,7 @@ function Container() {
         <label htmlFor="p">Possible Reasons: </label>
         <FormLabel  sx={{textAlign: 'left', color: 'black'}}>Check that your bank file is the intended file you want to use.</FormLabel>
         <FormLabel sx={{textAlign: 'left', color: 'black'}}>Check that your reference numbers or codes are equivalent.</FormLabel>
-        <FormLabel sx={{textAlign: 'left', color: 'black'}}>Check that the manifest information, range and sheetname typed is accurate.</FormLabel>
+        <FormLabel sx={{textAlign: 'left', color: 'black'}}>Check that the manifest range, start cell and sheetname is accurate.</FormLabel>
         <br/>
         <Button 
         variant="primary" 
@@ -722,23 +688,6 @@ function Container() {
           window.location.reload()
         }}>Continue</Button>
       </Modal>
-
-      <Modal
-        className="formtable"
-        OpenModal={openModalOne}
-        handleCloseModal={handlecloseModalOne}
-        >
-          <p> You didn't type cell to begin population</p>
-          <Button sx={{background: 'orange'}} onClick={handlecloseModalOne} >Ok</Button>
-        </Modal>
-
-        <Modal 
-          className="formtable"
-          OpenModal={openModalThree}
-          handleCloseModal={handlecloseModalThree}>
-            <p> you did not input a sheetname confirm that sheet name exist </p>
-            <Button sx={{background: 'orange'}} onClick={handlecloseModalThree} >Ok</Button>
-          </Modal>
 
       <Snackbar
         open={opensuccess}
@@ -775,18 +724,3 @@ function Container() {
 
 export default Container;
 
-/**if ((num > 1) && (amount > totalTP)) {
-      const rem = itemTable.reduce((dv, value) => (dv = dv - value.TOTAL),amount); //remainder
-      console.log(rem)
-      const lowestTP = itemTable.reduce((lowest, idx) => (lowest = Math.min(idx.TOTAL)),0);
-      console.log(lowestTP)
-      toPay > lowestTP ? paid = toPay : paid = Math.round(toPay + rem);
-
-    } 
-    
-    <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
-              <Button variant='contained' sx={{background: 'orange'}}
-              onClick={() => {handleOpenModal()}}
-              >Show information</Button>
-          </Box>
-    */

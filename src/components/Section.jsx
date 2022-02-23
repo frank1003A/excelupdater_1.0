@@ -15,7 +15,7 @@ const Section = () => {
                  <img style={{height: '20px'}} src={imgcon} alt="" />
             </div>
             <div className="info">
-                <p>Set all the default reference or code cell to zero: </p>
+                <p>Set default reference or code cells to zero: </p>
                  <img style={{height: '40px'}} src={imgzero} alt="" />
             </div>
         </Container>
