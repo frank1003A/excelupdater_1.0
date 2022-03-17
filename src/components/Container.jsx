@@ -407,69 +407,77 @@ function Container() {
   };
   //update workboook
 
-  const showtableForZenith = exceldata.map((row) => {
+  const showDataForZenith = exceldata.map((row) => {
     return (
-      <TableContainer component={Paper}>
-        <Table sx={{ minWidth: 650 }} aria-label="simple table" id="tablegen">
-          <TableHead sx={{ background: "#eee" }}>
-            <TableRow sx={{ color: "white" }}>
-              <TableCell>Id</TableCell>
-              <TableCell align="right">Trans Reference</TableCell>
-              <TableCell align="right">Trans Date</TableCell>
-              <TableCell align="right">Amount</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            <TableRow
+      <TableRow
               key={row.__rowNum__}
               sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
             >
               <TableCell component="th" scope="row">
                 {row.__rowNum__}
               </TableCell>
-              <TableCell align="right">{row["Trans Reference"]}</TableCell>
-              <TableCell align="right">{convert(row["Trans Date"])}</TableCell>
-              <TableCell align="right">{row.Amount}</TableCell>
+              <TableCell align="center">{row["Trans Reference"]}</TableCell>
+              <TableCell align="center">{convert(row["Trans Date"])}</TableCell>
+              <TableCell align="center">{row.Amount}</TableCell>
             </TableRow>
-          </TableBody>
-        </Table>
-      </TableContainer>
-    );
+    )
   });
 
-  const showtableForFidelity = exceldata.map((row) => {
-    return (
-      <TableContainer component={Paper}>
+  const showtableForZenith = <>
+    <TableContainer component={Paper}>
         <Table sx={{ minWidth: 650 }} aria-label="simple table" id="tablegen">
           <TableHead sx={{ background: "#eee" }}>
             <TableRow sx={{ color: "white" }}>
               <TableCell>Id</TableCell>
-              <TableCell align="right">Transaction Date</TableCell>
-              <TableCell align="right">Details</TableCell>
-              <TableCell align="right">Amount</TableCell>
-              <TableCell align="right">Balance</TableCell>
+              <TableCell align="center">Trans Reference</TableCell>
+              <TableCell align="center">Trans Date</TableCell>
+              <TableCell align="center">Amount</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            <TableRow
-              key={row.__rowNum__}
-              sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-            >
-              <TableCell component="th" scope="row">
-                {row.__rowNum__}
-              </TableCell>
-              <TableCell align="right">
-                {convert(row["Transaction Date"])}
-              </TableCell>
-              <TableCell align="right">{row.Details}</TableCell>
-              <TableCell align="right">{row.Amount}</TableCell>
-              <TableCell align="right">{row.Balance}</TableCell>
-            </TableRow>
+            {showDataForZenith}
           </TableBody>
         </Table>
       </TableContainer>
-    );
-  });
+  </>
+
+const showDataForFidelity = exceldata.map((row) => {
+  return (
+    <TableRow
+            key={row.__rowNum__}
+            sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+          >
+            <TableCell component="th" scope="row">
+              {row.__rowNum__}
+            </TableCell>
+            <TableCell align="center">
+              {convert(row["Transaction Date"])}
+            </TableCell>
+            <TableCell align="center">{row.Details}</TableCell>
+            <TableCell align="center">{row.Amount}</TableCell>
+            <TableCell align="center">{row.Balance}</TableCell>
+          </TableRow>
+  );
+});
+
+  const showtableForFidelity = <>
+     <TableContainer component={Paper}>
+        <Table sx={{ minWidth: 650 }} aria-label="simple table" id="tablegen">
+          <TableHead sx={{ background: "#eee" }}>
+            <TableRow sx={{ color: "white" }}>
+              <TableCell>Id</TableCell>
+              <TableCell align="center">Transaction Date</TableCell>
+              <TableCell align="center">Details</TableCell>
+              <TableCell align="center">Amount</TableCell>
+              <TableCell align="center">Balance</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {showDataForFidelity}
+          </TableBody>
+        </Table>
+      </TableContainer>
+  </>
 
   const showIcon = (
     <>
@@ -668,7 +676,7 @@ function Container() {
           </div>
         </div>
       </div>
-      <div className="dispSheets">{displayByBank()}</div>
+      <div className="dispSheets" style={{background:'#eee'}}>{displayByBank()}</div>
 
           <Modal
         className="formtable"

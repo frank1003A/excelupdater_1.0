@@ -104,6 +104,17 @@ label {
   border-radius: 1px solid #eee;
   --box-shadow: 0 .5rem 1.5rem rgba(0,0,0,.1);
   /* border: 1px solid orange; */
+  background-image: url(./assets/rangebg.jpg);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}
+
+.dispSheets {
+  background-image: url(./assets/png/protek_logo.png);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
 }
 
 footer{
