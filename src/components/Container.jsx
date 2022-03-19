@@ -8,16 +8,16 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import { TableBody } from "@mui/material";
 import Input from "@mui/material/Input";
-import { TextField, Button} from "@mui/material";
+import { TextField, Button } from "@mui/material";
 import imgSh from "../assets/tb.svg";
 import fdsvg from "../assets/Fidelity-Bank-Icon.svg";
 import zbpng from "../assets/png/Zenith-bank-logo.png";
-import { Paper, FormLabel} from "@mui/material";
+import { Paper, FormLabel } from "@mui/material";
 import Snackbar from "@mui/material/Snackbar";
 import MuiAlert from "@mui/material/Alert";
 import { Select, MenuItem } from "@mui/material";
 import Tooltip from "@mui/material/Tooltip";
-import Modal from "./Modal"
+import Modal from "./Modal";
 
 function Container() {
   const [exceldata, setexceldata] = useState([]);
@@ -111,18 +111,21 @@ function Container() {
   /**Match excel data by reference number */
   const matchByRef = (fileName, fileExtension, file) => {
     const promise = new Promise((resolve, reject) => {
-
       const fileReader = new FileReader();
       fileReader.readAsArrayBuffer(file);
 
       fileReader.onload = (e) => {
         const bufferArray = e.target.result;
-        const wb = XLSX.read(bufferArray, { type: "buffer", cellDates: true, cellStyles: true });
+        const wb = XLSX.read(bufferArray, {
+          type: "buffer",
+          cellDates: true,
+          cellStyles: true,
+        });
 
         let worksheet = {};
 
         for (const sheetName of wb.SheetNames)
-          worksheet[sheetName] = XLSX.utils.sheet_to_json(wb.Sheets); 
+          worksheet[sheetName] = XLSX.utils.sheet_to_json(wb.Sheets);
 
         //wb.Sheets[sheetname]["!ref"] = "A2:P40";
         // wb.Sheets[sheetname]["!ref"] = getRange()
@@ -133,20 +136,24 @@ function Container() {
           range: `${rangeS}:${rangeE}`,
         });
 
-        //console.log("match from", sheet);
-
         sheet.findIndex((wsData) => {
           for (let i = 0; i < exceldata.length; i++) {
             if (exceldata[i]["Trans Reference"] === wsData["Reference"]) {
               let dta = {
                 "TOTAL PAID": exceldata[i].Amount,
                 DATE: exceldata[i]["Trans Date"],
-                BALANCE: `${Math.round(
+                BALANCE: Math.round(
                   Math.abs(exceldata[i].Amount - wsData.TOTAL)
-                )} (${checkDebt(wsData.TOTAL, exceldata[i].Amount)})`,
+                ),
                 REMARK: sliceRemarksZenith(exceldata[i].Description),
                 Reference: exceldata[i]["Trans Reference"],
                 kilo: wsData.KILO,
+                status: `${checkDebt(
+                  sheet,
+                  wsData.Reference,
+                  wsData.TOTAL,
+                  exceldata[i].Amount
+                )}`,
               };
               worksheet[sheetname].push(dta);
             } else {
@@ -154,12 +161,12 @@ function Container() {
             }
           }
           return 0;
-        }); 
+        });
 
-          if (worksheet[sheetname].length < 1) {
-            checkMatch()
-            return
-          }
+        if (worksheet[sheetname].length < 1) {
+          checkMatch();
+          return;
+        }
 
         while (worksheet[sheetname].length !== sheet.length) {
           worksheet[sheetname].push({
@@ -168,6 +175,7 @@ function Container() {
             BALANCE: "",
             REMARK: "",
             Reference: "",
+            status: "",
           });
         }
 
@@ -207,14 +215,20 @@ function Container() {
             DATE: data["DATE"],
             BALANCE: data.BALANCE,
             REMARK: data.REMARK,
+            status: data.status,
           };
-          return (info)
+          return info;
         });
 
         const updatedWs = XLSX.utils.sheet_add_json(
           wb.Sheets[sheetname],
           DSHEET,
-          { origin: startIndex.toUpperCase(), skipHeader: true, raw: true }
+          {
+            origin: startIndex.toUpperCase(),
+            skipHeader: true,
+            raw: true,
+            cellStyles: true,
+          }
         );
         resolve(updatedWs);
 
@@ -236,20 +250,27 @@ function Container() {
 
   /**check for zero match */
   const checkMatch = () => {
-      handleOpenModal()
-  }
+    handleOpenModal();
+  };
 
   /**Check if customer overpaid or underpaid */
-  const checkDebt = (topay, paid) => {
+  const checkDebt = (itemTable, data, topay, paid) => {
+    const refCount = checkSplit(itemTable, data);
     let verdict = "";
     topay < paid ? (verdict = "overpaid") : (verdict = "owing");
+    if (refCount > 1) verdict = "split amount";
     return verdict;
   };
 
-  /**Match code based on fidelity bank excel file */      
+  /**check and notify of amount split */
+  const checkSplit = (itemTable, data) => {
+    const count = itemTable.filter((dta) => dta.Reference === data);
+    return count.length;
+  };
+
+  /**Match code based on fidelity bank excel file */
   const matchByCodeFidelity = (fileName, fileExtension, file) => {
     const promise = new Promise((resolve, reject) => {
-
       const fileReader = new FileReader();
       fileReader.readAsArrayBuffer(file);
 
@@ -279,12 +300,13 @@ function Container() {
               const dta = {
                 "TOTAL PAID": exceldata[i].Amount,
                 DATE: exceldata[i]["Transaction Date"],
-                BALANCE: `${Math.round(
+                BALANCE: Math.round(
                   Math.abs(exceldata[i].Amount - wsData.TOTAL)
-                )} (${checkDebt(wsData.TOTAL, exceldata[i].Amount)})`,
+                ),
                 REMARK: sliceRemarksFidelity(exceldata[i].Details),
                 code: exceldata[i].code,
                 kilo: wsData.KILO,
+                status: `${checkDebt(wsData.TOTAL, exceldata[i].Amount)}`,
               };
               worksheet[sheetname].push(dta);
             } else {
@@ -295,8 +317,8 @@ function Container() {
         });
 
         if (worksheet[sheetname].length < 1) {
-          checkMatch()
-          return
+          checkMatch();
+          return;
         }
 
         while (worksheet[sheetname].length !== sheet.length) {
@@ -306,6 +328,7 @@ function Container() {
             BALANCE: "",
             REMARK: "",
             code: "",
+            status: "",
           });
         }
 
@@ -337,16 +360,17 @@ function Container() {
         worksheet[sheetname].length = originalLength;
         //map utility function end
 
-        const DSHEET = worksheet[sheetname].map(data => {
-          let info =  { 
-            "TOTAL PAID": data["TOTAL PAID"] ,
-            DATE: data['DATE'],
+        const DSHEET = worksheet[sheetname].map((data) => {
+          let info = {
+            "TOTAL PAID": data["TOTAL PAID"],
+            DATE: data["DATE"],
             BALANCE: data.BALANCE,
-            REMARK: data.REMARK
-          }
-          return info
-        })
-        
+            REMARK: data.REMARK,
+            status: data.status,
+          };
+          return info;
+        });
+
         const updatedWs = XLSX.utils.sheet_add_json(
           wb.Sheets[sheetname],
           DSHEET,
@@ -410,21 +434,22 @@ function Container() {
   const showDataForZenith = exceldata.map((row) => {
     return (
       <TableRow
-              key={row.__rowNum__}
-              sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-            >
-              <TableCell component="th" scope="row">
-                {row.__rowNum__}
-              </TableCell>
-              <TableCell align="center">{row["Trans Reference"]}</TableCell>
-              <TableCell align="center">{convert(row["Trans Date"])}</TableCell>
-              <TableCell align="center">{row.Amount}</TableCell>
-            </TableRow>
-    )
+        key={row.__rowNum__}
+        sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+      >
+        <TableCell component="th" scope="row">
+          {row.__rowNum__}
+        </TableCell>
+        <TableCell align="center">{row["Trans Reference"]}</TableCell>
+        <TableCell align="center">{convert(row["Trans Date"])}</TableCell>
+        <TableCell align="center">{row.Amount}</TableCell>
+      </TableRow>
+    );
   });
 
-  const showtableForZenith = <>
-    <TableContainer component={Paper}>
+  const showtableForZenith = (
+    <>
+      <TableContainer component={Paper}>
         <Table sx={{ minWidth: 650 }} aria-label="simple table" id="tablegen">
           <TableHead sx={{ background: "#eee" }}>
             <TableRow sx={{ color: "white" }}>
@@ -434,34 +459,32 @@ function Container() {
               <TableCell align="center">Amount</TableCell>
             </TableRow>
           </TableHead>
-          <TableBody>
-            {showDataForZenith}
-          </TableBody>
+          <TableBody>{showDataForZenith}</TableBody>
         </Table>
       </TableContainer>
-  </>
-
-const showDataForFidelity = exceldata.map((row) => {
-  return (
-    <TableRow
-            key={row.__rowNum__}
-            sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-          >
-            <TableCell component="th" scope="row">
-              {row.__rowNum__}
-            </TableCell>
-            <TableCell align="center">
-              {convert(row["Transaction Date"])}
-            </TableCell>
-            <TableCell align="center">{row.Details}</TableCell>
-            <TableCell align="center">{row.Amount}</TableCell>
-            <TableCell align="center">{row.Balance}</TableCell>
-          </TableRow>
+    </>
   );
-});
 
-  const showtableForFidelity = <>
-     <TableContainer component={Paper}>
+  const showDataForFidelity = exceldata.map((row) => {
+    return (
+      <TableRow
+        key={row.__rowNum__}
+        sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+      >
+        <TableCell component="th" scope="row">
+          {row.__rowNum__}
+        </TableCell>
+        <TableCell align="center">{convert(row["Transaction Date"])}</TableCell>
+        <TableCell align="center">{row.Details}</TableCell>
+        <TableCell align="center">{row.Amount}</TableCell>
+        <TableCell align="center">{row.Balance}</TableCell>
+      </TableRow>
+    );
+  });
+
+  const showtableForFidelity = (
+    <>
+      <TableContainer component={Paper}>
         <Table sx={{ minWidth: 650 }} aria-label="simple table" id="tablegen">
           <TableHead sx={{ background: "#eee" }}>
             <TableRow sx={{ color: "white" }}>
@@ -472,12 +495,11 @@ const showDataForFidelity = exceldata.map((row) => {
               <TableCell align="center">Balance</TableCell>
             </TableRow>
           </TableHead>
-          <TableBody>
-            {showDataForFidelity}
-          </TableBody>
+          <TableBody>{showDataForFidelity}</TableBody>
         </Table>
       </TableContainer>
-  </>
+    </>
+  );
 
   const showIcon = (
     <>
@@ -510,7 +532,7 @@ const showDataForFidelity = exceldata.map((row) => {
     if (selectBank === 0) {
       return (
         <>
-        <Tooltip title={"Select Bank Excel File"}>
+          <Tooltip title={"Select Bank Excel File"}>
             <Input
               accept="file"
               id="icon-button-file-bank"
@@ -525,11 +547,11 @@ const showDataForFidelity = exceldata.map((row) => {
             />
           </Tooltip>
         </>
-      )
-    }else {
+      );
+    } else {
       return (
         <>
-      <Tooltip title={"Select Bank Excel File"}>
+          <Tooltip title={"Select Bank Excel File"}>
             <Input
               accept="file"
               id="icon-button-file-bank"
@@ -543,75 +565,74 @@ const showDataForFidelity = exceldata.map((row) => {
               }}
             />
           </Tooltip>
-      </>
-      )
+        </>
+      );
     }
-  } 
+  };
 
   const manifestControl = () => {
-    if (exceldata.length < 1){
+    if (exceldata.length < 1) {
       return (
         <>
-        <Tooltip title={"Select Manifest to update"}>
-              <Input
-                variant="outlined"
-                accept="file"
-                id="icon-button-file-manifest"
-                multiple
-                disabled={true}
-                type="file"
-                onChange={(e) => {
-                  const fileTwo = e.target.files[0];
-                  if (selectBank === 1) {
-                    matchByRef(
-                      `manifest ${convert(new Date(Date.now()))}`,
-                      "xlsx",
-                      fileTwo
-                    );
-                  } else if (selectBank === 2) {
-                    matchByCodeFidelity(
-                      `manifest ${convert(new Date(Date.now()))}`,
-                      "xlsx",
-                      fileTwo
-                    );
-                  }
-                }}
-              />
-            </Tooltip>
+          <Tooltip title={"Select Manifest to update"}>
+            <Input
+              variant="outlined"
+              accept="file"
+              id="icon-button-file-manifest"
+              multiple
+              disabled={true}
+              type="file"
+              onChange={(e) => {
+                const fileTwo = e.target.files[0];
+                if (selectBank === 1) {
+                  matchByRef(
+                    `manifest ${convert(new Date(Date.now()))}`,
+                    "xlsx",
+                    fileTwo
+                  );
+                } else if (selectBank === 2) {
+                  matchByCodeFidelity(
+                    `manifest ${convert(new Date(Date.now()))}`,
+                    "xlsx",
+                    fileTwo
+                  );
+                }
+              }}
+            />
+          </Tooltip>
         </>
-      )
-    }
-    else {
+      );
+    } else {
       return (
         <Tooltip title={"Select Manifest to update"}>
-              <Input
-                variant="outlined"
-                accept="file"
-                id="icon-button-file-manifest"
-                multiple
-                disabled={false}
-                type="file"
-                onChange={(e) => {
-                  const fileTwo = e.target.files[0];
-                  if (selectBank === 1) {
-                    matchByRef(
-                      `manifest ${convert(new Date(Date.now()))}`,
-                      "xlsx",
-                      fileTwo
-                    );
-                  } else if (selectBank === 2) {
-                    matchByCodeFidelity(
-                      `manifest ${convert(new Date(Date.now()))}`,
-                      "xlsx",
-                      fileTwo
-                    );
-                  }
-                }}
-              />
-            </Tooltip>
-      )
+          <Input
+            variant="outlined"
+            accept="file"
+            id="icon-button-file-manifest"
+            multiple
+            disabled={false}
+            type="file"
+            onChange={(e) => {
+              const fileTwo = e.target.files[0];
+              if (selectBank === 1) {
+                matchByRef(
+                  `manifest ${convert(new Date(Date.now()))}`,
+                  "xlsx",
+                  fileTwo
+                );
+              } else if (selectBank === 2) {
+                matchByCodeFidelity(
+                  `manifest ${convert(new Date(Date.now()))}`,
+                  "xlsx",
+                  fileTwo
+                );
+              }
+            }}
+          />
+        </Tooltip>
+      );
     }
-  }
+  };
 
   return (
     <div>
@@ -637,6 +658,7 @@ const showDataForFidelity = exceldata.map((row) => {
           {bankControl()}
           <Button
             variant="contained"
+            sx={{ background: "orange" }}
             onClick={() => {
               setexceldata([]);
             }}
@@ -676,25 +698,36 @@ const showDataForFidelity = exceldata.map((row) => {
           </div>
         </div>
       </div>
-      <div className="dispSheets" style={{background:'#eee'}}>{displayByBank()}</div>
+      <div className="dispSheets" style={{ background: "#eee" }}>
+        {displayByBank()}
+      </div>
 
-          <Modal
+      <Modal
         className="formtable"
         OpenModal={openNoMatchModal}
         handleCloseModal={handleCloseModal}
       >
         <p>No data from bank file matches data from manifest</p>
         <label htmlFor="p">Possible Reasons: </label>
-        <FormLabel  sx={{textAlign: 'left', color: 'black'}}>Check that your bank file is the intended file you want to use.</FormLabel>
-        <FormLabel sx={{textAlign: 'left', color: 'black'}}>Check that your reference numbers or codes are equivalent.</FormLabel>
-        <FormLabel sx={{textAlign: 'left', color: 'black'}}>Check that the manifest range, start cell and sheetname is accurate.</FormLabel>
-        <br/>
-        <Button 
-        variant="primary" 
-        sx={{background: 'orange'}} 
-        onClick={() => {
-          window.location.reload()
-        }}>Continue</Button>
+        <FormLabel sx={{ textAlign: "left", color: "black" }}>
+          Check that your bank file is the intended file you want to use.
+        </FormLabel>
+        <FormLabel sx={{ textAlign: "left", color: "black" }}>
+          Check that your reference numbers or codes are equivalent.
+        </FormLabel>
+        <FormLabel sx={{ textAlign: "left", color: "black" }}>
+          Check that the manifest range, start cell and sheetname is accurate.
+        </FormLabel>
+        <br />
+        <Button
+          variant="primary"
+          sx={{ background: "orange" }}
+          onClick={() => {
+            window.location.reload();
+          }}
+        >
+          Continue
+        </Button>
       </Modal>
 
       <Snackbar
@@ -731,4 +764,3 @@ const showDataForFidelity = exceldata.map((row) => {
 }
 
 export default Container;
-
