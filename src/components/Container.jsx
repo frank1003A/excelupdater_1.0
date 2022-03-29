@@ -143,17 +143,12 @@ function Container() {
                 "TOTAL PAID": exceldata[i].Amount,
                 DATE: exceldata[i]["Trans Date"],
                 BALANCE: Math.round(
-                  Math.abs(exceldata[i].Amount - wsData.TOTAL)
+                  Math.abs(exceldata[i].Amount - (wsData[" TOTAL "] || wsData.TOTAL || wsData["TOTAL"]))
                 ),
                 REMARK: sliceRemarksZenith(exceldata[i].Description),
                 Reference: exceldata[i]["Trans Reference"],
                 kilo: wsData.KILO,
-                status: `${checkDebt(
-                  sheet,
-                  wsData.Reference,
-                  wsData.TOTAL,
-                  exceldata[i].Amount
-                )}`,
+                status: `${checkDebt(sheet, wsData.Reference, (wsData[" TOTAL "] || wsData.TOTAL || wsData["TOTAL"]), exceldata[i].Amount)}`,
               };
               worksheet[sheetname].push(dta);
             } else {
@@ -256,9 +251,12 @@ function Container() {
   /**Check if customer overpaid or underpaid */
   const checkDebt = (itemTable, data, topay, paid) => {
     const refCount = checkSplit(itemTable, data);
+    const bal = paid - topay
     let verdict = "";
-    topay < paid ? (verdict = "overpaid") : (verdict = "owing");
-    if (refCount > 1) verdict = "split amount";
+    topay < paid ? verdict = "overpaid" : verdict = "owing";
+    if (refCount > 1) verdict = "split payment";
+    if (topay === paid) verdict = "paid in full";
+    if (bal > 1000) verdict = "overpaid or split payment"
     return verdict;
   };
 
