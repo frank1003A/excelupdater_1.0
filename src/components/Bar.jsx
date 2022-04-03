@@ -10,15 +10,43 @@ import Menu from '@mui/material/Menu';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import MailIcon from '@mui/icons-material/Mail';
 import NotificationsIcon from '@mui/icons-material/Notifications';
-import MoreIcon from '@mui/icons-material/MoreVert';
 import Logo from '../assets/favicon-32x32 copy.png'
+import { Button } from '@mui/material';
+import useLocalStorage from '../hooks/localStorage';
+import {useNavigate} from 'react-router-dom'
+import LogOutIcon from '@mui/icons-material/LogoutSharp'
 
 export default function PrimarySearchAppBar() {
+  const navigate = useNavigate()
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [mobileMoreAnchorEl, setMobileMoreAnchorEl] = React.useState(null);
+  const [,setislogged] = useLocalStorage("isLogin")
 
   const isMenuOpen = Boolean(anchorEl);
   const isMobileMenuOpen = Boolean(mobileMoreAnchorEl);
+
+   const logOut = () => {
+      setislogged(false);
+      navigate('/login');
+  }
+
+  const renderLogOut = (
+    <>
+    <Button 
+    variant="contained" 
+    sx={{color: 'White', backgroundColor: 'orange'}} 
+    onClick={() => logOut()}
+    >
+      <LogOutIcon/>
+    </Button>
+    </>
+  )
+
+  const renderCompUserData = (
+    <>
+    <p style={{color: 'orange', fontWeight: 600, marginRight : '1rem'}}>Marybeth Services</p>
+    </>
+  )
 
   const handleProfileMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -124,7 +152,7 @@ export default function PrimarySearchAppBar() {
           >
             Mapsheet
           </Typography>
-          <Box sx={{ flexGrow: 1 }} />
+          <Box sx={{ flexGrow: 1 }}/>
           <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
             <IconButton
               size="large"
@@ -134,9 +162,11 @@ export default function PrimarySearchAppBar() {
               onClick={handleMobileMenuOpen}
               color="inherit"
             >
-              <MoreIcon />
+              <AccountCircle />
             </IconButton>
           </Box>
+          {localStorage.getItem('isLogin') === 'true' ? renderCompUserData : null}
+          {localStorage.getItem('isLogin') === 'true' ? renderLogOut : null}
         </Toolbar>
       </AppBar>
       {renderMobileMenu}

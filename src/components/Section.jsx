@@ -1,29 +1,32 @@
 import image from '../assets/86.svg'
-import imgcon from '../assets/convention.png'
-import imgzero from '../assets/zero.png'
+import {Link} from 'react-router-dom'
+import { Typography } from '@mui/material'
 
 const Section = () => {
   const divStyle = {
     padding: '.5rem', 
     display: 'flex', 
     flexDirection: 'row', 
-    gap: '2rem', 
+   // gap: '2rem', 
     background: '#eee',
     justifyContent: 'center' 
   }
+
+  const inner = {
+    display: 'flex', 
+    flexDirection: 'row',
+    alignItems: 'center' 
+  }
+
   return (
     <div>
         <div style={divStyle}>
             <div className="image">
                 <img style={{height: '100px'}} src={image} alt="" />
             </div>
-            <div className="info">
-                <p>Please keep the naming convention for your manifest: </p>
-                 <img style={{height: '20px'}} src={imgcon} alt="" />
-            </div>
-            <div className="info">
-                <p>Set default reference or code cells to zero: </p>
-                 <img style={{height: '40px'}} src={imgzero} alt="" />
+            <div style={inner}>
+            <Typography style={{ fontWeight: 600, fontSize: 20, marginRight : '1rem'}}>Welcome to Mapsheet Version @0.1.1</Typography>
+            <Link to="/documentation">Read Documentation</Link>
             </div>
         </div>
     </div>

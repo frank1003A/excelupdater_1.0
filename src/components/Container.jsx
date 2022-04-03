@@ -1,6 +1,6 @@
 import React from "react";
 import * as XLSX from "xlsx";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Table from "@mui/material/Table";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
@@ -8,8 +8,8 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import { TableBody } from "@mui/material";
 import Input from "@mui/material/Input";
-import { TextField, Button } from "@mui/material";
-import imgSh from "../assets/tb.svg";
+import { TextField, Button, Typography } from "@mui/material";
+import imgSh from "../assets/455.svg";
 import fdsvg from "../assets/Fidelity-Bank-Icon.svg";
 import zbpng from "../assets/png/Zenith-bank-logo.png";
 import { Paper, FormLabel } from "@mui/material";
@@ -18,14 +18,25 @@ import MuiAlert from "@mui/material/Alert";
 import { Select, MenuItem } from "@mui/material";
 import Tooltip from "@mui/material/Tooltip";
 import Modal from "./Modal";
+import Checkbox from "@mui/material/Checkbox";
+import {useNavigate} from 'react-router-dom'
+import useLocalStorage from "../hooks/localStorage";
 
 function Container() {
+  const navigate = useNavigate()
+  const [islogged] = useLocalStorage("isLogin");
+  
+  useEffect(() => {
+   islogged === true ? navigate('/') : navigate('/login')
+  }, [islogged, navigate])
+  
   const [exceldata, setexceldata] = useState([]);
   const [sheetname, setsheetName] = useState("");
   const [startIndex, setstartIndex] = useState("");
   const [rangeS, setrangeS] = useState("");
   const [rangeE, setrangeE] = useState("");
   const [selectBank, setselectBank] = useState(0);
+  const [spAmount, setspAmount] = useState(false);
 
   /**Modal State */
   const [openNoMatchModal, setopenNoMatchModal] = useState(false);
@@ -54,7 +65,6 @@ function Container() {
     if (reason === "clickaway") {
       return;
     }
-
     setOpensuccess(false);
   };
 
@@ -62,7 +72,6 @@ function Container() {
     if (reason === "clickaway") {
       return;
     }
-
     setOpenwarn(false);
   };
 
@@ -108,7 +117,7 @@ function Container() {
     });
   };
 
-  /**Match excel data by reference number */
+  /**Match excel data with reference number */
   const matchByRef = (fileName, fileExtension, file) => {
     const promise = new Promise((resolve, reject) => {
       const fileReader = new FileReader();
@@ -127,97 +136,40 @@ function Container() {
         for (const sheetName of wb.SheetNames)
           worksheet[sheetName] = XLSX.utils.sheet_to_json(wb.Sheets);
 
-        //wb.Sheets[sheetname]["!ref"] = "A2:P40";
-        // wb.Sheets[sheetname]["!ref"] = getRange()
-        //sheet['!ref'] = "M3:P50"
-
         const sheet = XLSX.utils.sheet_to_json(wb.Sheets[sheetname], {
           dateNF: "yyyy-mm-dd",
           range: `${rangeS}:${rangeE}`,
+          blankrows: true, 
+          defval: ""
         });
 
         sheet.findIndex((wsData) => {
           for (let i = 0; i < exceldata.length; i++) {
             if (exceldata[i]["Trans Reference"] === wsData["Reference"]) {
-              let dta = {
-                "TOTAL PAID": exceldata[i].Amount,
-                DATE: exceldata[i]["Trans Date"],
-                BALANCE: Math.round(
-                  Math.abs(exceldata[i].Amount - (wsData[" TOTAL "] || wsData.TOTAL || wsData["TOTAL"]))
-                ),
-                REMARK: sliceRemarksZenith(exceldata[i].Description),
-                Reference: exceldata[i]["Trans Reference"],
-                kilo: wsData.KILO,
-                status: `${checkDebt(sheet, wsData.Reference, (wsData[" TOTAL "] || wsData.TOTAL || wsData["TOTAL"]), exceldata[i].Amount)}`,
-              };
-              worksheet[sheetname].push(dta);
-            } else {
-              //do nothing
+                wsData["TOTAL PAID"] = splitAmount(sheet, wsData.Reference, wsData["TOTAL"], exceldata[i].Amount);
+                wsData.DATE = exceldata[i]["Trans Date"];
+                wsData.BALANCE = Math.round(Math.abs(wsData["TOTAL PAID"] - (wsData[" TOTAL "] || wsData.TOTAL || wsData["TOTAL"])));
+                wsData.REMARK = sliceRemarksZenith(exceldata[i].Description);
+                wsData.status = `${checkDebt(sheet, wsData.Reference, (wsData[" TOTAL "] || wsData.TOTAL || wsData["TOTAL"]), wsData["TOTAL PAID"])}`;
             }
           }
           return 0;
         });
 
-        if (worksheet[sheetname].length < 1) {
-          checkMatch();
-          return;
-        }
-
-        while (worksheet[sheetname].length !== sheet.length) {
-          worksheet[sheetname].push({
-            "TOTAL PAID": "",
-            DATE: "",
-            BALANCE: "",
-            REMARK: "",
-            Reference: "",
-            status: "",
-          });
-        }
-
-        //map utility function
-
-        const originalLength = worksheet[sheetname].length;
-
-        const provide = (arr, field, index) => {
-          let result = arr.filter((a) => a.Reference === sheet[index][field]);
-
-          if (result.length === 0) {
-            result = arr.filter((a) => a.Reference === "");
-          }
-
-          if (result[0].Reference > 1) {
-            let rest = result.filter((a) => a.kilo === sheet[index].KILO);
-            result[0] = rest[0];
-          }
-
-          return result[0];
-        };
-
-        const originalArr = worksheet[sheetname].slice(0, originalLength);
-
-        for (let i = 0; i < sheet.length; i++) {
-          worksheet[sheetname].length = originalLength * 2;
-          const item = provide(originalArr, "Reference", i);
-          worksheet[sheetname][i] = item;
-        }
-
-        worksheet[sheetname].length = originalLength;
-        //map utility function end
-
-        const DSHEET = worksheet[sheetname].map((data) => {
-          let info = {
+        const finalSheet = sheet.map(data => {
+          let fdata = {
             "TOTAL PAID": data["TOTAL PAID"],
             DATE: data["DATE"],
             BALANCE: data.BALANCE,
             REMARK: data.REMARK,
-            status: data.status,
-          };
-          return info;
-        });
+            status: data.status
+          }
+          return fdata
+        })
 
-        const updatedWs = XLSX.utils.sheet_add_json(
+         const updatedWs = XLSX.utils.sheet_add_json(
           wb.Sheets[sheetname],
-          DSHEET,
+          finalSheet,
           {
             origin: startIndex.toUpperCase(),
             skipHeader: true,
@@ -254,9 +206,11 @@ function Container() {
     const bal = paid - topay
     let verdict = "";
     topay < paid ? verdict = "overpaid" : verdict = "owing";
-    if (refCount > 1) verdict = "split payment";
+    if (refCount > 1) verdict = "manual split";
     if (topay === paid) verdict = "paid in full";
-    if (bal > 1000) verdict = "overpaid or split payment"
+    if (bal > 1000) verdict = "overpaid or manual payment"
+    if (spAmount === true && refCount > 1 && topay === paid) verdict = "payment split"
+    if (spAmount === true && refCount > 1 && paid > topay) verdict = `+${Math.round(bal)} added after split`
     return verdict;
   };
 
@@ -266,7 +220,22 @@ function Container() {
     return count.length;
   };
 
-  /**Match code based on fidelity bank excel file */
+  /**Split amount with same reference */
+  const splitAmount = (itemTable, data, toPay, amtPaid) => {
+    let amount = amtPaid;
+    const num = itemTable.filter((dta) => dta.Reference === data);
+    if (num.length > 1 && spAmount === true) {
+      const totalSum = Math.round(num.reduce((sum, data) => sum + Number(data.TOTAL || 0), 0))
+      if (amount > totalSum) {
+        const rem = amount - totalSum
+        const lowestTP = num.reduce((lowest, idx) => (lowest = Math.min(idx.TOTAL)),0);
+        toPay > lowestTP ? amount = toPay : amount = Math.round(toPay + rem);
+      }
+    }
+    return amount
+  };
+
+  /**Match excel data with generated code */
   const matchByCodeFidelity = (fileName, fileExtension, file) => {
     const promise = new Promise((resolve, reject) => {
       const fileReader = new FileReader();
@@ -281,16 +250,10 @@ function Container() {
         for (const sheetName of wb.SheetNames)
           worksheet[sheetName] = XLSX.utils.sheet_to_json(wb.Sheets);
 
-        //wb.Sheets[sheetname]["!ref"] = "A2:P40";
-        // wb.Sheets[sheetname]["!ref"] = getRange()
-        //sheet['!ref'] = "M3:P50"
-
         const sheet = XLSX.utils.sheet_to_json(wb.Sheets[sheetname], {
           dateNF: "yyyy-mm-dd",
           range: `${rangeS}:${rangeE}`,
         });
-
-        // console.log("match from", sheet);
 
         sheet.findIndex((wsData) => {
           for (let i = 0; i < exceldata.length; i++) {
@@ -411,6 +374,10 @@ function Container() {
     if (text.includes("TRANSFER")) rep = text.slice(m_idx2_cap + 4, s_idx2);
     if (text.includes("OPAY")) rep = text.slice(f_dsh + 6, l_dsh);
     if (text.includes("STAMP")) rep = text;
+    if (text.includes('FBN') && text.includes("/")) rep = text.slice(f_dsh + 1, l_dsh)
+    if (text.includes('UBN') && text.includes("/")) rep = text.slice(f_dsh + 1, l_dsh)
+    if (text.includes('ABN') && text.includes("/")) rep = text.slice(f_dsh + 1, l_dsh - 4)
+    if (text.includes('GTB') && text.includes("/")) rep = text.slice(f_dsh + 1, l_dsh)
     return rep;
   };
 
@@ -663,6 +630,10 @@ function Container() {
           >
             Clear
           </Button>
+          <div style={{ border: "1px solid orange", borderRadius: '4px', display: "flex", flexDirection: "row"}}>
+          <Checkbox value={spAmount} onClick={() => setspAmount(!spAmount)}/>
+          <Typography style={{ color: 'ButtonShadow', marginRight : '1rem', marginTop : '.6rem'}}>Split Payments</Typography>
+          </div>
         </div>
         <div className="sheetinfo">
           <FormLabel>Manifest Excel Details</FormLabel>

@@ -13,7 +13,7 @@ const Modals = ({children, OpenModal, handleCloseModal}) => {
     padding: "1rem",
     borderColor: 'none',
     p: 4,
-    overflow: 'hidden',
+    overflow: 'auto',
     //maxWidth: '600px',
     borderRadius: '8px'
   };
