@@ -37,10 +37,11 @@ const LoginForm = () => {
     if (islogged === true) navigate("/");
     if (islogged === false || islogged === (undefined || null)) 
      setlogInCredentials(passcode);
-  };
+  }
 
   useEffect(() => {
     assignLogInCred();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /**Snackbar */
