@@ -208,7 +208,7 @@ function Container() {
     topay < paid ? verdict = "overpaid" : verdict = "owing";
     if (refCount > 1) verdict = "manual split";
     if (topay === paid) verdict = "paid in full";
-    if (bal > 1000) verdict = "overpaid or manual payment"
+    if (bal > 1000) verdict = "overpaid or manual split"
     if (spAmount === true && refCount > 1 && topay === paid) verdict = "payment split"
     if (spAmount === true && refCount > 1 && paid > topay) verdict = `+${Math.round(bal)} added after split`
     return verdict;
@@ -231,6 +231,7 @@ function Container() {
         const lowestTP = num.reduce((lowest, idx) => (lowest = Math.min(idx.TOTAL)),0);
         toPay > lowestTP ? amount = toPay : amount = Math.round(toPay + rem);
       }
+      if (amount === totalSum) amount = toPay
     }
     return amount
   };
