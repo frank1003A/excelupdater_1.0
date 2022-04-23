@@ -114,6 +114,11 @@ label {
   justify-content: center;
 }
 
+#banklogo {
+  height: 10px;
+  margin-left: 1rem;
+}
+
 .sectionInner {
   display: flex;
   flex-direction: row;

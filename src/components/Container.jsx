@@ -621,11 +621,11 @@ function Container() {
           >
             <MenuItem value={0}>Select Bank</MenuItem>
             <MenuItem value={1}>
-              Zenith <img src={zbpng} alt="zenith logo" />
+              Zenith <img src={zbpng} id='banklogo' alt="zenith logo" />
             </MenuItem>
             <MenuItem value={2}>
               Fidelity
-              <img src={fdsvg} alt="fidelity logo" />
+              <img src={fdsvg} id='banklogo' alt="fidelity logo" />
             </MenuItem>
           </Select>
           {bankControl()}
