@@ -1,10 +1,11 @@
 import React from 'react';
+import { Typography } from "@mui/material";
 
 const Footer = () => {
   const date =  new Date()
   return (
       <footer>
-        <p>copyright &copy;{date.getFullYear()} <button style={{color: 'orange'}}>protek</button>  </p>
+        <Typography>copyright &copy;{date.getFullYear()} </Typography><Typography style={{color: 'orange', marginLeft: '5px'}}>Protek</Typography>
       </footer>
   )
 };

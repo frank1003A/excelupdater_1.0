@@ -4,12 +4,6 @@ const AnalyticsCenter = () => {
   const [useCount, setCount] = useState(0)
   const [updateCount, setupdateCount] = useState(0)
 
-  function returnCounter() {
-    if (localStorage.getItem('isLogin') === 'true'){
-      
-    }
-  }
-
   return (
     <div>
         <div className="scontainer">

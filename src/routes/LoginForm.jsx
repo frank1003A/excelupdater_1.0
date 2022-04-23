@@ -22,6 +22,15 @@ const LoginForm = () => {
   const [Org, setOrg] = useState("");
   const [Pass, setPass] = useState("");
 
+   //date format
+   const convert = (str) => {
+    let date = new Date(str),
+      mnth = ("0" + (date.getMonth() + 1)).slice(-2),
+      day = ("0" + date.getDate()).slice(-2);
+    //return [date.getFullYear(), mnth, day].join("-");
+    return [mnth, day, date.getFullYear()].join("/");
+  };
+
   const passcode = {
     Organization: "marybeth&cyto",
     Password: "bridges",
@@ -31,12 +40,14 @@ const LoginForm = () => {
     "LoginCredentials",
     []
   );
+
   const [islogged, setislogged] = useLocalStorage("isLogin", false);
+
+  const [, setdateLogin] = useLocalStorage("dateLogin", new Date())
 
   const assignLogInCred = () => {
     if (islogged === true) navigate("/");
-    if (islogged === false || islogged === (undefined || null)) 
-     setlogInCredentials(passcode);
+    if (islogged === false || islogged === (undefined || null)) setlogInCredentials(passcode)
   }
 
   useEffect(() => {
@@ -67,7 +78,8 @@ const LoginForm = () => {
       Org === logInCredentials.Organization &&
       Pass === logInCredentials.Password
     ) {
-      setislogged(true);
+      setislogged(true)
+      setdateLogin(convert(Date.now()))
       navigate("/");
     }
     if (

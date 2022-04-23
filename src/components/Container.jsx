@@ -24,12 +24,19 @@ import useLocalStorage from "../hooks/localStorage";
 
 function Container() {
   const navigate = useNavigate()
-  const [islogged] = useLocalStorage("isLogin");
+  const [islogged, setislogged] = useLocalStorage("isLogin");
+  const [dateLogin,] = useLocalStorage("dateLogin")
+
+  const checkLogingAndLoginExpiry = () => {
+    if (islogged === false) navigate('/login')
+ }
   
   useEffect(() => {
-   islogged === true ? navigate('/') : navigate('/login')
-  }, [islogged, navigate])
-  
+    islogged === true && dateLogin === convert(Date.now()) ? navigate('/') : setislogged(false);
+    checkLogingAndLoginExpiry()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [islogged, navigate, dateLogin])
+
   const [exceldata, setexceldata] = useState([]);
   const [sheetname, setsheetName] = useState("");
   const [startIndex, setstartIndex] = useState("");

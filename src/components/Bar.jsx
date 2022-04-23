@@ -26,7 +26,7 @@ export default function PrimarySearchAppBar() {
   const isMobileMenuOpen = Boolean(mobileMoreAnchorEl);
 
    const logOut = () => {
-      setislogged(false);
+      setislogged(false); 
       navigate('/login');
   }
 
@@ -165,8 +165,8 @@ export default function PrimarySearchAppBar() {
               <AccountCircle />
             </IconButton>
           </Box>
-          {localStorage.getItem('isLogin') === 'true' ? renderCompUserData : null}
-          {localStorage.getItem('isLogin') === 'true' ? renderLogOut : null}
+          {localStorage.getItem('isLogin').includes('true') ? renderCompUserData : null}
+          {localStorage.getItem('isLogin').includes('true') ? renderLogOut : null}
         </Toolbar>
       </AppBar>
       {renderMobileMenu}
