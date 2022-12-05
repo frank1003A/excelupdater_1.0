@@ -19,23 +19,25 @@ import { Select, MenuItem } from "@mui/material";
 import Tooltip from "@mui/material/Tooltip";
 import Modal from "./Modal";
 import Checkbox from "@mui/material/Checkbox";
-import {useNavigate} from 'react-router-dom'
+import { useNavigate } from "react-router-dom";
 import useLocalStorage from "../hooks/localStorage";
 
 function Container() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const [islogged, setislogged] = useLocalStorage("isLogin");
-  const [dateLogin,] = useLocalStorage("dateLogin")
+  const [dateLogin] = useLocalStorage("dateLogin");
 
   const checkLogingAndLoginExpiry = () => {
-    if (islogged === false) navigate('/login')
- }
-  
+    if (islogged === false) navigate("/login");
+  };
+
   useEffect(() => {
-    islogged === true && dateLogin === convert(Date.now()) ? navigate('/') : setislogged(false);
-    checkLogingAndLoginExpiry()
+    islogged === true && dateLogin === convert(Date.now())
+      ? navigate("/")
+      : setislogged(false);
+    checkLogingAndLoginExpiry();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [islogged, navigate, dateLogin])
+  }, [islogged, navigate, dateLogin]);
 
   const [exceldata, setexceldata] = useState([]);
   const [sheetname, setsheetName] = useState("");
@@ -146,35 +148,50 @@ function Container() {
         const sheet = XLSX.utils.sheet_to_json(wb.Sheets[sheetname], {
           dateNF: "yyyy-mm-dd",
           range: `${rangeS}:${rangeE}`,
-          blankrows: true, 
-          defval: ""
+          blankrows: true,
+          defval: "",
         });
 
         sheet.findIndex((wsData) => {
           for (let i = 0; i < exceldata.length; i++) {
             if (exceldata[i]["Trans Reference"] === wsData["Reference"]) {
-                wsData["TOTAL PAID"] = splitAmount(sheet, wsData.Reference, wsData["TOTAL"], exceldata[i].Amount);
-                wsData.DATE = exceldata[i]["Trans Date"];
-                wsData.BALANCE = Math.round(Math.abs(wsData["TOTAL PAID"] - (wsData[" TOTAL "] || wsData.TOTAL || wsData["TOTAL"])));
-                wsData.REMARK = sliceRemarksZenith(exceldata[i].Description);
-                wsData.status = `${checkDebt(sheet, wsData.Reference, (wsData[" TOTAL "] || wsData.TOTAL || wsData["TOTAL"]), wsData["TOTAL PAID"])}`;
+              wsData["TOTAL PAID"] = splitAmount(
+                sheet,
+                wsData.Reference,
+                wsData["TOTAL"],
+                exceldata[i].Amount
+              );
+              wsData.DATE = exceldata[i]["Trans Date"];
+              wsData.BALANCE = Math.round(
+                Math.abs(
+                  wsData["TOTAL PAID"] -
+                    (wsData[" TOTAL "] || wsData.TOTAL || wsData["TOTAL"])
+                )
+              );
+              wsData.REMARK = sliceRemarksZenith(exceldata[i].Description);
+              wsData.status = `${checkDebt(
+                sheet,
+                wsData.Reference,
+                wsData[" TOTAL "] || wsData.TOTAL || wsData["TOTAL"],
+                wsData["TOTAL PAID"]
+              )}`;
             }
           }
           return 0;
         });
 
-        const finalSheet = sheet.map(data => {
+        const finalSheet = sheet.map((data) => {
           let fdata = {
             "TOTAL PAID": data["TOTAL PAID"],
             DATE: data["DATE"],
             BALANCE: data.BALANCE,
             REMARK: data.REMARK,
-            status: data.status
-          }
-          return fdata
-        })
+            status: data.status,
+          };
+          return fdata;
+        });
 
-         const updatedWs = XLSX.utils.sheet_add_json(
+        const updatedWs = XLSX.utils.sheet_add_json(
           wb.Sheets[sheetname],
           finalSheet,
           {
@@ -210,14 +227,16 @@ function Container() {
   /**Check if customer overpaid or underpaid */
   const checkDebt = (itemTable, data, topay, paid) => {
     const refCount = checkSplit(itemTable, data);
-    const bal = paid - topay
+    const bal = paid - topay;
     let verdict = "";
-    topay < paid ? verdict = "overpaid" : verdict = "owing";
+    topay < paid ? (verdict = "overpaid") : (verdict = "owing");
     if (refCount > 1) verdict = "manual split";
     if (topay === paid) verdict = "paid in full";
-    if (bal > 1000) verdict = "overpaid or manual split"
-    if (spAmount === true && refCount > 1 && topay === paid) verdict = "payment split"
-    if (spAmount === true && refCount > 1 && paid > topay) verdict = `+${Math.round(bal)} added after split`
+    if (bal > 1000) verdict = "overpaid or manual split";
+    if (spAmount === true && refCount > 1 && topay === paid)
+      verdict = "payment split";
+    if (spAmount === true && refCount > 1 && paid > topay)
+      verdict = `+${Math.round(bal)} added after split`;
     return verdict;
   };
 
@@ -232,15 +251,22 @@ function Container() {
     let amount = amtPaid;
     const num = itemTable.filter((dta) => dta.Reference === data);
     if (num.length > 1 && spAmount === true) {
-      const totalSum = Math.round(num.reduce((sum, data) => sum + Number(data.TOTAL || 0), 0))
+      const totalSum = Math.round(
+        num.reduce((sum, data) => sum + Number(data.TOTAL || 0), 0)
+      );
       if (amount > totalSum) {
-        const rem = amount - totalSum
-        const lowestTP = num.reduce((lowest, idx) => (lowest = Math.min(idx.TOTAL)),0);
-        toPay > lowestTP ? amount = toPay : amount = Math.round(toPay + rem);
+        const rem = amount - totalSum;
+        const lowestTP = num.reduce(
+          (lowest, idx) => (lowest = Math.min(idx.TOTAL)),
+          0
+        );
+        toPay > lowestTP
+          ? (amount = toPay)
+          : (amount = Math.round(toPay + rem));
       }
-      if (amount === totalSum) amount = toPay
+      if (amount === totalSum) amount = toPay;
     }
-    return amount
+    return amount;
   };
 
   /**Match excel data with generated code */
@@ -382,10 +408,14 @@ function Container() {
     if (text.includes("TRANSFER")) rep = text.slice(m_idx2_cap + 4, s_idx2);
     if (text.includes("OPAY")) rep = text.slice(f_dsh + 6, l_dsh);
     if (text.includes("STAMP")) rep = text;
-    if (text.includes('FBN') && text.includes("/")) rep = text.slice(f_dsh + 1, l_dsh)
-    if (text.includes('UBN') && text.includes("/")) rep = text.slice(f_dsh + 1, l_dsh)
-    if (text.includes('ABN') && text.includes("/")) rep = text.slice(f_dsh + 1, l_dsh - 4)
-    if (text.includes('GTB') && text.includes("/")) rep = text.slice(f_dsh + 1, l_dsh)
+    if (text.includes("FBN") && text.includes("/"))
+      rep = text.slice(f_dsh + 1, l_dsh);
+    if (text.includes("UBN") && text.includes("/"))
+      rep = text.slice(f_dsh + 1, l_dsh);
+    if (text.includes("ABN") && text.includes("/"))
+      rep = text.slice(f_dsh + 1, l_dsh - 4);
+    if (text.includes("GTB") && text.includes("/"))
+      rep = text.slice(f_dsh + 1, l_dsh);
     return rep;
   };
 
@@ -621,11 +651,11 @@ function Container() {
           >
             <MenuItem value={0}>Select Bank</MenuItem>
             <MenuItem value={1}>
-              Zenith <img src={zbpng} id='banklogo' alt="zenith logo" />
+              Zenith <img src={zbpng} id="banklogo" alt="zenith logo" />
             </MenuItem>
             <MenuItem value={2}>
               Fidelity
-              <img src={fdsvg} id='banklogo' alt="fidelity logo" />
+              <img src={fdsvg} id="banklogo" alt="fidelity logo" />
             </MenuItem>
           </Select>
           {bankControl()}
@@ -638,9 +668,24 @@ function Container() {
           >
             Clear
           </Button>
-          <div style={{ border: "1px solid orange", borderRadius: '4px', display: "flex", flexDirection: "row"}}>
-          <Checkbox value={spAmount} onClick={() => setspAmount(!spAmount)}/>
-          <Typography style={{ color: 'ButtonShadow', marginRight : '1rem', marginTop : '.6rem'}}>Split Payments</Typography>
+          <div
+            style={{
+              border: "1px solid orange",
+              borderRadius: "4px",
+              display: "flex",
+              flexDirection: "row",
+            }}
+          >
+            <Checkbox value={spAmount} onClick={() => setspAmount(!spAmount)} />
+            <Typography
+              style={{
+                color: "ButtonShadow",
+                marginRight: "1rem",
+                marginTop: ".6rem",
+              }}
+            >
+              Split Payments
+            </Typography>
           </div>
         </div>
         <div className="sheetinfo">
